@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AnimeStream — Watch Anime Online Free</title>
+    <title>ThyAnime — Watch Anime Online Free</title>
     <style>
         :root {
             --bg: #0b0b10;
@@ -60,10 +60,17 @@
             color:#fff; cursor:pointer; user-select:none; text-decoration:none; flex-shrink:0;
         }
         .nav-logo-icon {
-            width:38px; height:38px; border-radius:10px;
-            background: linear-gradient(135deg, #f47521, #e05d1a);
+            width:42px; height:42px; border-radius:50%;
+            background: #1a1a26;
             display:flex; align-items:center; justify-content:center;
-            font-size:1.1rem; box-shadow: 0 6px 20px rgba(244,117,33,0.35);
+            overflow:hidden; box-shadow: 0 6px 20px rgba(244,117,33,0.35);
+            transition: var(--transition);
+        }
+        .nav-logo-icon img {
+            width:100%; height:100%; object-fit:cover; border-radius:50%;
+        }
+        .nav-logo:hover .nav-logo-icon {
+            box-shadow: 0 6px 28px rgba(244,117,33,0.55);
         }
         .nav-links { display:flex; gap:6px; flex-shrink:0; }
         .nav-link {
@@ -270,7 +277,7 @@
         @media (max-width:700px) {
             .nav-inner { gap:8px; height:52px; }
             .nav-logo { font-size:1rem; gap:6px; }
-            .nav-logo-icon { width:30px; height:30px; font-size:0.85rem; border-radius:7px; }
+            .nav-logo-icon { width:32px; height:32px; }
             .nav-link { padding:6px 10px; font-size:0.72rem; }
             .nav-search { max-width:180px; min-width:120px; }
             .nav-search input { padding:8px 12px 8px 32px; font-size:0.78rem; }
@@ -294,9 +301,11 @@
 <body>
     <nav class="nav">
         <div class="nav-inner">
-            <div class="nav-logo" onclick="goHome()" title="AnimeStream Home">
-                <div class="nav-logo-icon">▶</div>
-                AnimeStream
+            <div class="nav-logo" onclick="goHome()" title="ThyAnime Home">
+                <div class="nav-logo-icon">
+                    <img src="https://media1.tenor.com/m/2thZuhJSwFsAAAAC/wolf-girl-howling.gif" alt="ThyAnime Logo" />
+                </div>
+                ThyAnime
             </div>
             <div class="nav-links">
                 <button class="nav-link active" data-page="home" onclick="goHome()">🏠 Home</button>
@@ -404,7 +413,7 @@
         </div>
     </div>
 
-    <div class="footer">AnimeStream — Free anime streaming · Not affiliated with AniList or any provider · For educational purposes</div>
+    <div class="footer">ThyAnime — Free anime streaming · Not affiliated with AniList or any provider</div>
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
@@ -452,11 +461,11 @@
             };
 
             try {
-                const saved = localStorage.getItem('animeStream_history');
+                const saved = localStorage.getItem('thyAnime_history');
                 if (saved) state.watchHistory = JSON.parse(saved);
             } catch (e) {}
             function saveHistory() {
-                try { localStorage.setItem('animeStream_history', JSON.stringify(state.watchHistory)); } catch (e) {}
+                try { localStorage.setItem('thyAnime_history', JSON.stringify(state.watchHistory)); } catch (e) {}
             }
 
             // ═══════════ DOM HELPERS ═══════════
@@ -697,13 +706,35 @@
                 if (btn) btn.classList.add('active');
             }
 
+            // ⭐ FIX: Stop playback when going home
             window.goHome = () => {
+                // Hide watch & browse, show home
                 homePage.classList.remove('hidden');
                 watchPage.classList.remove('active');
                 browsePage.classList.remove('active');
                 setActiveNav('home');
+
+                // Clear the search input and dropdown
                 searchInput.value = '';
                 searchDropdown.classList.remove('active');
+
+                // ⭐ STOP THE VIDEO AND RESET PLAYER
+                if (playerIframe) {
+                    playerIframe.src = '';
+                    playerIframe.style.display = 'none';
+                }
+                playerPlaceholder.style.display = 'flex';
+                playerPlaceholder.querySelector('.icon').textContent = '🎬';
+                playerPlaceholder.querySelector('p').textContent = 'Select an episode to start streaming';
+
+                // Hide episode section and audio toggle
+                episodeSection.style.display = 'none';
+                audioToggleWrap.style.display = 'none';
+
+                // Reset watch page title
+                $('#watchPageTitle').textContent = '';
+
+                // Scroll to top
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
@@ -999,7 +1030,7 @@
                 loadHomePage();
             }
             init();
-            console.log('🎬 AnimeStream ready! Home, Browse, and Watch pages active.');
+            console.log('🐺 ThyAnime ready! Home, Browse, and Watch pages active.');
         })();
     </script>
 </body>
