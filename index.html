@@ -66,12 +66,8 @@
             overflow:hidden; box-shadow: 0 6px 20px rgba(244,117,33,0.35);
             transition: var(--transition);
         }
-        .nav-logo-icon img {
-            width:100%; height:100%; object-fit:cover; border-radius:50%;
-        }
-        .nav-logo:hover .nav-logo-icon {
-            box-shadow: 0 6px 28px rgba(244,117,33,0.55);
-        }
+        .nav-logo-icon img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+        .nav-logo:hover .nav-logo-icon { box-shadow: 0 6px 28px rgba(244,117,33,0.55); }
         .nav-links { display:flex; gap:6px; flex-shrink:0; }
         .nav-link {
             padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.85rem;
@@ -180,13 +176,57 @@
         .watch-layout { display:grid; grid-template-columns: 1fr 370px; gap:22px; align-items:start; }
         @media (max-width:950px) { .watch-layout { grid-template-columns:1fr; } }
         .player-card { background:#000; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); box-shadow:0 8px 30px rgba(0,0,0,0.4); }
-        .player-wrapper { position:relative; width:100%; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; background:#000; }
+
+        /* ── PLAYER WRAPPER ────────────────────────────────────────────────── */
+        .player-wrapper {
+            position:relative; width:100%; aspect-ratio:16/9;
+            display:flex; align-items:center; justify-content:center; background:#000;
+        }
         .player-wrapper iframe { width:100%; height:100%; border:none; position:absolute; top:0; left:0; }
+
+        /* ── WATERMARK — floats above player, fades on hover so it's unobtrusive */
+        .player-watermark {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(11, 11, 16, 0.60);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(244, 117, 33, 0.30);
+            border-radius: 999px;
+            padding: 5px 12px 5px 6px;
+            pointer-events: none;   /* never blocks player controls */
+            user-select: none;
+            opacity: 0.85;
+            transition: opacity 0.4s ease;
+        }
+        .player-wrapper:hover .player-watermark { opacity: 0.25; }
+        .player-watermark img {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+            box-shadow: 0 0 10px rgba(244, 117, 33, 0.6);
+        }
+        .player-watermark span {
+            font-size: 0.73rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.04em;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            white-space: nowrap;
+        }
+        /* ─────────────────────────────────────────────────────────────────── */
+
         .player-placeholder { display:flex; flex-direction:column; align-items:center; gap:14px; color:var(--text3); text-align:center; padding:40px; }
         .player-placeholder .icon { font-size:3.5rem; opacity:0.5; animation:float 3s ease-in-out infinite; }
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
 
-        /* Server 5 loading indicator */
         .server5-loading {
             display:flex; flex-direction:column; align-items:center; gap:16px;
             color:var(--text2); text-align:center; padding:40px; width:100%;
@@ -247,7 +287,6 @@
         .episode-btn:hover { border-color:var(--accent); color:#fff; background:var(--surface3); }
         .episode-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 2px 12px var(--accent-glow); }
 
-        /* Server 5 episode list (shows snapshot thumbnails) */
         .s5-ep-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; max-height:260px; overflow-y:auto; padding:2px; margin-top:4px; }
         .s5-ep-card {
             background:var(--surface2); border:2px solid var(--border); border-radius:8px;
@@ -387,6 +426,13 @@
                 <div>
                     <div class="player-card">
                         <div class="player-wrapper" id="playerWrapper">
+
+                            <!-- ✦ ThyAnime watermark — always visible, fades on hover ✦ -->
+                            <div class="player-watermark">
+                                <img src="https://media1.tenor.com/m/2thZuhJSwFsAAAAC/wolf-girl-howling.gif" alt="ThyAnime" />
+                                <span>ThyAnime</span>
+                            </div>
+
                             <div class="player-placeholder" id="playerPlaceholder">
                                 <span class="icon">🎬</span>
                                 <p>Select an episode to start streaming</p>
@@ -410,12 +456,10 @@
                             <button class="audio-btn" data-audio="dub" onclick="setAudio('dub')">🗣️ Dub</button>
                         </div>
                     </div>
-                    <!-- Standard episode grid (shown for non-Server5 providers) -->
                     <div class="episode-section" id="episodeSection" style="display:none;">
                         <span class="section-label">📺 Episodes</span>
                         <div class="episode-grid" id="episodeGrid"></div>
                     </div>
-                    <!-- Server 5 episode grid with thumbnails (shown only when Server 5 is selected and episodes loaded) -->
                     <div class="episode-section" id="s5EpisodeSection" style="display:none;">
                         <span class="section-label">📺 Episodes (Server 5)</span>
                         <div class="s5-ep-grid" id="s5EpisodeGrid"></div>
@@ -450,9 +494,8 @@
     <script>
         (function() {
             // ─── SERVER 5 CONFIG ──────────────────────────────────────────────
-            // The upstream API base used by AniStream / Server 5
             const SERVER5_BASE = 'https://overlying-plausible-lilac.ngrok-free.dev';
-            // Headers required to bypass ngrok browser warning
+            // Header bypass for fetch() calls (API endpoints — headers work here)
             const SKIP_WARNING = { headers: { 'ngrok-skip-browser-warning': '1' } };
 
             // ─── PROVIDERS ───────────────────────────────────────────────────
@@ -525,18 +568,15 @@
                 browseTotalPages: 1,
                 isLoadingBrowse: false,
                 animeRelations: [],
-                // Server 5 specific state
                 server5: {
-                    animeSession: null,    // session ID for the anime (from /search)
-                    episodes: [],          // array of episode objects from /episodes
+                    animeSession: null,
+                    episodes: [],
                     isLoading: false,
                     loadError: null,
-                    // Cache by anime title to avoid re-fetching
                     cacheKey: null,
                 },
             };
 
-            // Restore watch history
             try {
                 const saved = localStorage.getItem('thyAnime_history');
                 if (saved) state.watchHistory = JSON.parse(saved);
@@ -683,11 +723,6 @@
             }
 
             // ─── SERVER 5 API ─────────────────────────────────────────────────
-            // Uses the same pattern as AniStream's worker.js approach:
-            //   GET /search?q=<title>          → array of { session, title, poster, type, year }
-            //   GET /episodes?session=<session> → array of { session, number, title, snapshot }
-            //   GET /embed?anime_session=<>&episode_session=<>&title=<> → embeddable player page
-
             async function server5Search(title) {
                 const url = `${SERVER5_BASE}/search?q=${encodeURIComponent(title)}`;
                 const resp = await fetch(url, SKIP_WARNING);
@@ -702,46 +737,43 @@
                 return resp.json();
             }
 
+            // ── FIX: iframes can't send custom headers, so we append the
+            //   ngrok-skip-browser-warning query param instead — ngrok
+            //   honours it exactly the same way as the header. ──────────────
             function server5BuildEmbedUrl(animeSession, episodeSession, title) {
-                return `${SERVER5_BASE}/embed?anime_session=${encodeURIComponent(animeSession)}&episode_session=${encodeURIComponent(episodeSession)}&title=${encodeURIComponent(title)}`;
+                return `${SERVER5_BASE}/embed`
+                    + `?anime_session=${encodeURIComponent(animeSession)}`
+                    + `&episode_session=${encodeURIComponent(episodeSession)}`
+                    + `&title=${encodeURIComponent(title)}`
+                    + `&ngrok-skip-browser-warning=1`;
             }
 
             function server5Prefetch(animeSession, episodeSession) {
-                fetch(`${SERVER5_BASE}/prefetch?anime_session=${encodeURIComponent(animeSession)}&episode_session=${encodeURIComponent(episodeSession)}`, SKIP_WARNING)
-                    .catch(() => {});
+                fetch(
+                    `${SERVER5_BASE}/prefetch?anime_session=${encodeURIComponent(animeSession)}&episode_session=${encodeURIComponent(episodeSession)}`,
+                    SKIP_WARNING
+                ).catch(() => {});
             }
 
-            // Load Server 5 data for the selected anime (search + episodes)
-            // Returns { animeSession, episodes } or throws
             async function server5LoadAnime(animeTitle) {
-                // Use cache if same title
                 if (state.server5.cacheKey === animeTitle && state.server5.animeSession && state.server5.episodes.length) {
                     return { animeSession: state.server5.animeSession, episodes: state.server5.episodes };
                 }
-
-                // Search for the anime
                 const results = await server5Search(animeTitle);
                 if (!Array.isArray(results) || results.length === 0) {
                     throw new Error(`"${animeTitle}" not found on Server 5`);
                 }
-
-                // Pick best match (prefer exact title match, else use first result)
                 const titleLower = animeTitle.toLowerCase();
                 let best = results.find(r => (r.title || '').toLowerCase() === titleLower) || results[0];
                 const animeSession = best.session;
                 if (!animeSession) throw new Error('Server 5 returned no session ID');
-
-                // Fetch episodes
                 const episodes = await server5FetchEpisodes(animeSession);
                 if (!Array.isArray(episodes) || episodes.length === 0) {
                     throw new Error('No episodes found on Server 5 for this anime');
                 }
-
-                // Cache
                 state.server5.animeSession = animeSession;
                 state.server5.episodes = episodes;
                 state.server5.cacheKey = animeTitle;
-
                 return { animeSession, episodes };
             }
 
@@ -776,14 +808,13 @@
                     <p>Select an episode to start streaming</p>`;
             }
 
-            // ─── LOAD STREAM (MAIN DISPATCH) ──────────────────────────────────
+            // ─── LOAD STREAM ─────────────────────────────────────────────────
             async function loadStream() {
                 if (!state.selectedAnime || !state.selectedProvider) return;
                 const provider = state.selectedProvider;
                 const anime = state.selectedAnime;
                 const epNum = state.selectedEpisode;
 
-                // Always reset iframe first
                 playerIframe.style.display = 'none';
                 playerIframe.src = '';
 
@@ -792,8 +823,6 @@
                     return;
                 }
 
-                // ── Standard providers ─────────────────────────────────────
-                // Restore proper sandbox for standard providers
                 playerIframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms allow-presentation');
                 playerIframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
                 playerIframe.removeAttribute('scrolling');
@@ -812,13 +841,12 @@
                 playerIframe.src = url;
             }
 
-            // ─── SERVER 5 STREAM LOADER ───────────────────────────────────────
+            // ─── SERVER 5 STREAM ─────────────────────────────────────────────
             async function loadServer5Stream(anime, epNum) {
                 if (state.server5.isLoading) return;
                 state.server5.isLoading = true;
 
                 try {
-                    // Step 1: Search & load episodes if not cached
                     const hasCached = state.server5.cacheKey === anime.title
                         && state.server5.animeSession
                         && state.server5.episodes.length > 0;
@@ -831,27 +859,25 @@
 
                     const { animeSession, episodes } = await server5LoadAnime(anime.title);
 
-                    // Render the Server 5 episode grid (with thumbnails) if not done yet
                     if (!hasCached) {
                         renderServer5Episodes(episodes, epNum, animeSession);
                     }
 
-                    // Step 2: Find the requested episode
                     const ep = episodes.find(e => String(e.number) === String(epNum))
-                             || episodes[epNum - 1]  // fallback: index-based
+                             || episodes[epNum - 1]
                              || episodes[0];
 
                     if (!ep || !ep.session) {
                         throw new Error(`Episode ${epNum} not found on Server 5`);
                     }
 
-                    // Step 3: Build embed URL (matching AniStream's exact approach)
                     const epTitle = ep.title && ep.title !== `Episode ${ep.number || epNum}`
                         ? ep.title
                         : `${anime.title} Ep ${ep.number || epNum}`;
+
+                    // ngrok query param skips the interstitial inside the iframe
                     const embedUrl = server5BuildEmbedUrl(animeSession, ep.session, epTitle);
 
-                    // Step 4: Set up iframe (matching AniStream's working config)
                     playerIframe.removeAttribute('sandbox');
                     playerIframe.setAttribute('allow', 'autoplay; fullscreen');
                     playerIframe.setAttribute('scrolling', 'no');
@@ -860,14 +886,12 @@
                     playerIframe.style.display = 'block';
                     playerIframe.src = embedUrl;
 
-                    // Step 5: Prefetch next episode
                     const nextEp = episodes.find(e => String(e.number) === String(epNum + 1))
-                                 || episodes[epNum]; // index-based fallback
+                                 || episodes[epNum];
                     if (nextEp && nextEp.session) {
                         server5Prefetch(animeSession, nextEp.session);
                     }
 
-                    // Update active episode highlight in S5 grid
                     s5EpisodeGrid.querySelectorAll('.s5-ep-card').forEach(card => {
                         card.classList.toggle('active', String(card.dataset.epnum) === String(ep.number || epNum));
                     });
@@ -884,7 +908,7 @@
             // ─── SERVER 5 EPISODE GRID ────────────────────────────────────────
             function renderServer5Episodes(episodes, activeEpNum, animeSession) {
                 s5EpisodeGrid.innerHTML = '';
-                episodeSection.style.display = 'none'; // hide standard grid
+                episodeSection.style.display = 'none';
                 s5EpisodeSection.style.display = 'flex';
 
                 episodes.forEach((ep, i) => {
@@ -905,7 +929,6 @@
                     `;
                     card.addEventListener('click', () => {
                         state.selectedEpisode = num;
-                        // Update history
                         if (state.selectedAnime) {
                             const idx = state.watchHistory.findIndex(h => h.id === state.selectedAnime.id);
                             if (idx >= 0) { state.watchHistory[idx].episode = num; state.watchHistory[idx].timestamp = Date.now(); }
@@ -918,16 +941,13 @@
                     s5EpisodeGrid.appendChild(card);
                 });
 
-                // Scroll active into view
                 const activeCard = s5EpisodeGrid.querySelector('.s5-ep-card.active');
                 if (activeCard) activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
-            // ─── EPISODE SWITCHING ────────────────────────────────────────────
-            // Called when switching providers to show correct episode UI
+            // ─── EPISODE UI SYNC ─────────────────────────────────────────────
             function syncEpisodeUI() {
                 if (state.selectedProvider.id === 'server5') {
-                    // If we have cached episodes, show S5 grid; otherwise hide both until loaded
                     if (state.server5.cacheKey === state.selectedAnime?.title && state.server5.episodes.length) {
                         episodeSection.style.display = 'none';
                         s5EpisodeSection.style.display = 'flex';
@@ -986,11 +1006,8 @@
                 state.selectedEpisode = 1;
                 state.selectedProvider = PROVIDERS.find(p => !p.external) || PROVIDERS[0];
                 state.selectedAudio = 'sub';
-
-                // Reset Server 5 cache when switching anime
                 state.server5 = { animeSession: null, episodes: [], isLoading: false, loadError: null, cacheKey: null };
 
-                // Update history
                 const existing = state.watchHistory.findIndex(h => h.id === animeData.id);
                 if (existing >= 0) state.watchHistory.splice(existing, 1);
                 state.watchHistory.unshift({ ...animeData, episode: 1, timestamp: Date.now() });
@@ -1115,7 +1132,6 @@
             window.handleHeroClick = () => { if (state.heroAnime) selectAnime(state.heroAnime); };
 
             window.goToSection = (sectionId) => {
-                // Make sure home page is visible first
                 homePage.classList.remove('hidden');
                 watchPage.classList.remove('active');
                 browsePage.classList.remove('active');
@@ -1137,7 +1153,6 @@
                 setActiveNav('home');
                 searchInput.value = '';
                 searchDropdown.classList.remove('active');
-                // Stop iframe playback
                 playerIframe.src = '';
                 playerIframe.style.display = 'none';
                 showPlayerIdle();
@@ -1280,16 +1295,11 @@
                             state.selectedProvider = prov;
                             renderProviderDropdown();
                             updateAudioToggle();
-
                             if (providerChanged) {
-                                // Reset Server 5 loading state when leaving S5
-                                if (prov.id !== 'server5') {
-                                    state.server5.isLoading = false;
-                                }
+                                if (prov.id !== 'server5') state.server5.isLoading = false;
                                 syncEpisodeUI();
                                 loadStream();
                             }
-
                             if (prov.external) showToast(`${prov.name} opens in a new tab`, '↗️');
                         }
                         state.providerDropdownOpen = false;
@@ -1349,8 +1359,6 @@
                         if (!f) return '';
                         const rating = f.averageScore ? `⭐${(f.averageScore / 10).toFixed(1)}` : '';
                         const meta = [f.format, f.episodes ? `${f.episodes}eps` : '', rating].filter(Boolean).join(' · ');
-                        // Safe JSON serialization for data attribute
-                        const safeJson = JSON.stringify(f).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
                         return `<div class="search-result-item" data-id="${f.id}">
                             <img class="search-result-img" src="${escapeHTML(f.coverImage)}" onerror="this.style.display='none'">
                             <div>
@@ -1360,7 +1368,6 @@
                         </div>`;
                     }).join('');
 
-                    // Store results in a map for lookup by id (avoids data-json attribute issues)
                     const resultMap = {};
                     results.forEach(media => {
                         const f = formatAnimeData(media);
@@ -1400,7 +1407,6 @@
             searchInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') { searchDropdown.classList.remove('active'); searchInput.blur(); }
                 if (e.key === 'Enter') {
-                    // Click first result on Enter
                     const first = searchDropdown.querySelector('.search-result-item');
                     if (first) first.click();
                 }
