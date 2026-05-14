@@ -994,6 +994,7 @@
                         const url = await getServer5Url();
                         playerPlaceholder.style.display = 'none';
                         playerIframe.style.display = 'block';
+                        playerIframe.removeAttribute('sandbox'); // remove sandbox for server5 embed
                         playerIframe.src = url;
                     } catch (e) {
                         console.error(e);
@@ -1004,6 +1005,9 @@
                     }
                     return;
                 }
+
+                // Restore sandbox for other providers
+                playerIframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms allow-presentation');
 
                 const url = provider.getUrl(
                     state.selectedAnime.id,
@@ -1080,7 +1084,7 @@
                 loadHomePage();
             }
             init();
-            console.log('🐺 ThyAnime ready! Server 5 (new API) integrated.');
+            console.log('🐺 ThyAnime ready! Server 5 video display fixed.');
         })();
     </script>
 </body>
