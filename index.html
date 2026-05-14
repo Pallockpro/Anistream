@@ -108,6 +108,7 @@
             display:flex; align-items:center; gap:12px; padding:10px 15px;
             cursor:pointer; transition:var(--transition); border-bottom:1px solid var(--border);
         }
+        .search-result-item:last-child { border-bottom:none; }
         .search-result-item:hover { background:var(--surface2); }
         .search-result-img { width:40px; height:54px; border-radius:5px; object-fit:cover; flex-shrink:0; background:var(--surface3); }
         .search-result-title { font-weight:600; font-size:0.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -184,7 +185,22 @@
         .player-placeholder { display:flex; flex-direction:column; align-items:center; gap:14px; color:var(--text3); text-align:center; padding:40px; }
         .player-placeholder .icon { font-size:3.5rem; opacity:0.5; animation:float 3s ease-in-out infinite; }
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-        .controls-row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+
+        /* Server 5 loading indicator */
+        .server5-loading {
+            display:flex; flex-direction:column; align-items:center; gap:16px;
+            color:var(--text2); text-align:center; padding:40px; width:100%;
+        }
+        .server5-loading .spinner {
+            width:36px; height:36px; border:3px solid var(--border);
+            border-top-color:var(--accent); border-radius:50%;
+            animation:spin 0.8s linear infinite;
+        }
+        .server5-loading .status-text { font-size:0.9rem; font-weight:500; }
+        .server5-loading .sub-text { font-size:0.75rem; color:var(--text3); }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        .controls-row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:12px 0; }
         .provider-dropdown-wrap { position:relative; min-width:200px; }
         .provider-dropdown-btn {
             display:flex; align-items:center; gap:10px; padding:11px 16px; border-radius:24px;
@@ -207,9 +223,10 @@
             transition:var(--transition); font-weight:500; font-size:0.83rem;
             border-bottom:1px solid var(--border); color:var(--text2);
         }
+        .provider-option:last-child { border-bottom:none; }
         .provider-option:hover { background:var(--surface2); color:#fff; }
         .provider-option.selected { background:var(--surface2); color:#fff; font-weight:700; }
-        .provider-option .prov-desc { font-size:0.7rem; color:var(--text3); margin-left:auto; }
+        .provider-option .prov-desc { font-size:0.7rem; color:var(--text3); margin-left:auto; white-space:nowrap; }
         .audio-toggle { display:flex; gap:4px; padding:4px; background:var(--surface2); border-radius:24px; border:1px solid var(--border); }
         .audio-btn {
             padding:8px 16px; border-radius:20px; border:none; cursor:pointer;
@@ -218,16 +235,31 @@
         }
         .audio-btn.active { background:var(--accent); color:#fff; box-shadow:0 2px 10px var(--accent-glow); }
         .audio-btn:hover:not(.active) { color:#fff; }
-        .episode-section { display:flex; flex-direction:column; gap:10px; }
+        .episode-section { display:flex; flex-direction:column; gap:10px; margin-top:4px; }
         .episode-section .section-label { font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text3); font-weight:700; }
-        .episode-grid { display:flex; flex-wrap:wrap; gap:7px; max-height:180px; overflow-y:auto; padding:2px; }
+        .episode-grid { display:flex; flex-wrap:wrap; gap:7px; max-height:200px; overflow-y:auto; padding:2px; }
+        .episode-grid::-webkit-scrollbar { width:4px; }
         .episode-btn {
-            width:40px; height:40px; border-radius:var(--radius-xs); border:2px solid var(--border);
+            width:42px; height:42px; border-radius:var(--radius-xs); border:2px solid var(--border);
             background:var(--surface2); color:var(--text2); cursor:pointer; font-weight:600;
             font-size:0.78rem; transition:var(--transition); font-family:inherit; flex-shrink:0;
         }
         .episode-btn:hover { border-color:var(--accent); color:#fff; background:var(--surface3); }
         .episode-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 2px 12px var(--accent-glow); }
+
+        /* Server 5 episode list (shows snapshot thumbnails) */
+        .s5-ep-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; max-height:260px; overflow-y:auto; padding:2px; margin-top:4px; }
+        .s5-ep-card {
+            background:var(--surface2); border:2px solid var(--border); border-radius:8px;
+            overflow:hidden; cursor:pointer; transition:var(--transition);
+        }
+        .s5-ep-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+        .s5-ep-card.active { border-color:var(--accent); box-shadow:0 0 14px var(--accent-glow); }
+        .s5-ep-thumb { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:var(--surface3); }
+        .s5-ep-thumb-placeholder { width:100%; aspect-ratio:16/9; background:var(--surface3); display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:1.2rem; }
+        .s5-ep-label { padding:5px 7px; font-size:0.72rem; font-weight:600; color:var(--text); }
+        .s5-ep-label small { display:block; color:var(--text3); font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
         .anime-sidebar {
             background:var(--surface); border-radius:var(--radius); border:1px solid var(--border);
             padding:18px; display:flex; flex-direction:column; gap:14px; position:sticky; top:80px;
@@ -260,7 +292,7 @@
         .pagination button:disabled { opacity:0.4; cursor:default; }
         .pagination .page-indicator { font-weight:600; color:var(--text2); }
 
-        .toast-container { position:fixed; bottom:28px; right:28px; z-index:999; display:flex; flex-direction:column; gap:8px; }
+        .toast-container { position:fixed; bottom:28px; right:28px; z-index:999; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
         .toast {
             background:var(--surface); border:1px solid var(--border); color:#fff;
             padding:12px 20px; border-radius:24px; font-weight:600; font-size:0.85rem;
@@ -378,9 +410,15 @@
                             <button class="audio-btn" data-audio="dub" onclick="setAudio('dub')">🗣️ Dub</button>
                         </div>
                     </div>
+                    <!-- Standard episode grid (shown for non-Server5 providers) -->
                     <div class="episode-section" id="episodeSection" style="display:none;">
                         <span class="section-label">📺 Episodes</span>
                         <div class="episode-grid" id="episodeGrid"></div>
+                    </div>
+                    <!-- Server 5 episode grid with thumbnails (shown only when Server 5 is selected and episodes loaded) -->
+                    <div class="episode-section" id="s5EpisodeSection" style="display:none;">
+                        <span class="section-label">📺 Episodes (Server 5)</span>
+                        <div class="s5-ep-grid" id="s5EpisodeGrid"></div>
                     </div>
                 </div>
                 <aside class="anime-sidebar" id="animeSidebar">
@@ -411,9 +449,13 @@
 
     <script>
         (function() {
+            // ─── SERVER 5 CONFIG ──────────────────────────────────────────────
+            // The upstream API base used by AniStream / Server 5
             const SERVER5_BASE = 'https://operate-moonrise-riddance.ngrok-free.dev';
+            // Headers required to bypass ngrok browser warning
             const SKIP_WARNING = { headers: { 'ngrok-skip-browser-warning': '1' } };
 
+            // ─── PROVIDERS ───────────────────────────────────────────────────
             const PROVIDERS = [
                 {
                     id: "animeplay",
@@ -460,13 +502,13 @@
                     name: "Server 5",
                     icon: "🌐",
                     color: "#f97316",
-                    description: "API embed (sub/dub handled by player)",
-                    getUrl: () => '', // not used, we build URL dynamically
-                    supportsAudio: false,  // embed player handles sub/dub natively
+                    description: "Direct embed — sub & dub in player",
+                    supportsAudio: false,
                     external: false,
                 }
             ];
 
+            // ─── STATE ───────────────────────────────────────────────────────
             let state = {
                 selectedAnime: null,
                 selectedEpisode: 1,
@@ -483,9 +525,18 @@
                 browseTotalPages: 1,
                 isLoadingBrowse: false,
                 animeRelations: [],
-                server5Data: { animeSession: null, episodes: [] },
+                // Server 5 specific state
+                server5: {
+                    animeSession: null,    // session ID for the anime (from /search)
+                    episodes: [],          // array of episode objects from /episodes
+                    isLoading: false,
+                    loadError: null,
+                    // Cache by anime title to avoid re-fetching
+                    cacheKey: null,
+                },
             };
 
+            // Restore watch history
             try {
                 const saved = localStorage.getItem('thyAnime_history');
                 if (saved) state.watchHistory = JSON.parse(saved);
@@ -505,6 +556,8 @@
             const playerIframe = $('#playerIframe');
             const episodeSection = $('#episodeSection');
             const episodeGrid = $('#episodeGrid');
+            const s5EpisodeSection = $('#s5EpisodeSection');
+            const s5EpisodeGrid = $('#s5EpisodeGrid');
             const audioToggleWrap = $('#audioToggleWrap');
             const providerDropdownWrap = $('#providerDropdownWrap');
             const providerDropdownBtn = $('#providerDropdownBtn');
@@ -524,12 +577,16 @@
             const browsePagination = $('#browsePagination');
             const sidebarRelations = $('#sidebarRelations');
 
+            // ─── TOAST ───────────────────────────────────────────────────────
             function showToast(msg, icon = '✅') {
                 const t = document.createElement('div');
                 t.className = 'toast';
-                t.innerHTML = `${icon} ${msg}`;
+                t.innerHTML = `${icon} ${escapeHTML(msg)}`;
                 toastContainer.appendChild(t);
-                setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, 2200);
+                setTimeout(() => {
+                    t.style.opacity = '0'; t.style.transition = 'opacity 0.3s';
+                    setTimeout(() => t.remove(), 300);
+                }, 2200);
             }
 
             function escapeHTML(s) {
@@ -538,6 +595,7 @@
                 return d.innerHTML;
             }
 
+            // ─── ANILIST ─────────────────────────────────────────────────────
             function formatAnimeData(media) {
                 if (!media) return null;
                 return {
@@ -618,7 +676,339 @@
                         relationType: e.relationType,
                     }));
             }
+            async function fetchAnimeById(id) {
+                const q = `query ($id:Int) { Media(id:$id) { ${MEDIA_FIELDS} } }`;
+                const data = await anilistQuery(q, { id });
+                return data.Media ? formatAnimeData(data.Media) : null;
+            }
 
+            // ─── SERVER 5 API ─────────────────────────────────────────────────
+            // Uses the same pattern as AniStream's worker.js approach:
+            //   GET /search?q=<title>          → array of { session, title, poster, type, year }
+            //   GET /episodes?session=<session> → array of { session, number, title, snapshot }
+            //   GET /embed?anime_session=<>&episode_session=<>&title=<> → embeddable player page
+
+            async function server5Search(title) {
+                const url = `${SERVER5_BASE}/search?q=${encodeURIComponent(title)}`;
+                const resp = await fetch(url, SKIP_WARNING);
+                if (!resp.ok) throw new Error(`Search failed: HTTP ${resp.status}`);
+                return resp.json();
+            }
+
+            async function server5FetchEpisodes(animeSession) {
+                const url = `${SERVER5_BASE}/episodes?session=${encodeURIComponent(animeSession)}`;
+                const resp = await fetch(url, SKIP_WARNING);
+                if (!resp.ok) throw new Error(`Episodes fetch failed: HTTP ${resp.status}`);
+                return resp.json();
+            }
+
+            function server5BuildEmbedUrl(animeSession, episodeSession, title) {
+                return `${SERVER5_BASE}/embed?anime_session=${encodeURIComponent(animeSession)}&episode_session=${encodeURIComponent(episodeSession)}&title=${encodeURIComponent(title)}`;
+            }
+
+            function server5Prefetch(animeSession, episodeSession) {
+                fetch(`${SERVER5_BASE}/prefetch?anime_session=${encodeURIComponent(animeSession)}&episode_session=${encodeURIComponent(episodeSession)}`, SKIP_WARNING)
+                    .catch(() => {});
+            }
+
+            // Load Server 5 data for the selected anime (search + episodes)
+            // Returns { animeSession, episodes } or throws
+            async function server5LoadAnime(animeTitle) {
+                // Use cache if same title
+                if (state.server5.cacheKey === animeTitle && state.server5.animeSession && state.server5.episodes.length) {
+                    return { animeSession: state.server5.animeSession, episodes: state.server5.episodes };
+                }
+
+                // Search for the anime
+                const results = await server5Search(animeTitle);
+                if (!Array.isArray(results) || results.length === 0) {
+                    throw new Error(`"${animeTitle}" not found on Server 5`);
+                }
+
+                // Pick best match (prefer exact title match, else use first result)
+                const titleLower = animeTitle.toLowerCase();
+                let best = results.find(r => (r.title || '').toLowerCase() === titleLower) || results[0];
+                const animeSession = best.session;
+                if (!animeSession) throw new Error('Server 5 returned no session ID');
+
+                // Fetch episodes
+                const episodes = await server5FetchEpisodes(animeSession);
+                if (!Array.isArray(episodes) || episodes.length === 0) {
+                    throw new Error('No episodes found on Server 5 for this anime');
+                }
+
+                // Cache
+                state.server5.animeSession = animeSession;
+                state.server5.episodes = episodes;
+                state.server5.cacheKey = animeTitle;
+
+                return { animeSession, episodes };
+            }
+
+            // ─── PLAYER MANAGEMENT ────────────────────────────────────────────
+            function showPlayerLoading(msg, sub = '') {
+                playerIframe.style.display = 'none';
+                playerIframe.src = '';
+                playerPlaceholder.style.display = 'flex';
+                playerPlaceholder.innerHTML = `
+                    <div class="server5-loading">
+                        <div class="spinner"></div>
+                        <span class="status-text">${escapeHTML(msg)}</span>
+                        ${sub ? `<span class="sub-text">${escapeHTML(sub)}</span>` : ''}
+                    </div>`;
+            }
+
+            function showPlayerError(msg) {
+                playerIframe.style.display = 'none';
+                playerIframe.src = '';
+                playerPlaceholder.style.display = 'flex';
+                playerPlaceholder.innerHTML = `
+                    <span class="icon" style="animation:none;">⚠️</span>
+                    <p style="color:var(--text3);font-size:0.9rem;">${escapeHTML(msg)}</p>`;
+            }
+
+            function showPlayerIdle() {
+                playerIframe.style.display = 'none';
+                playerIframe.src = '';
+                playerPlaceholder.style.display = 'flex';
+                playerPlaceholder.innerHTML = `
+                    <span class="icon">🎬</span>
+                    <p>Select an episode to start streaming</p>`;
+            }
+
+            // ─── LOAD STREAM (MAIN DISPATCH) ──────────────────────────────────
+            async function loadStream() {
+                if (!state.selectedAnime || !state.selectedProvider) return;
+                const provider = state.selectedProvider;
+                const anime = state.selectedAnime;
+                const epNum = state.selectedEpisode;
+
+                // Always reset iframe first
+                playerIframe.style.display = 'none';
+                playerIframe.src = '';
+
+                if (provider.id === 'server5') {
+                    await loadServer5Stream(anime, epNum);
+                    return;
+                }
+
+                // ── Standard providers ─────────────────────────────────────
+                // Restore proper sandbox for standard providers
+                playerIframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms allow-presentation');
+                playerIframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+                playerIframe.removeAttribute('scrolling');
+
+                const url = provider.getUrl(anime.id, anime.season, epNum, state.selectedAudio);
+
+                if (provider.external) {
+                    window.open(url, '_blank');
+                    showToast(`Opening ${provider.name} in new tab...`, '↗️');
+                    showPlayerIdle();
+                    return;
+                }
+
+                playerPlaceholder.style.display = 'none';
+                playerIframe.style.display = 'block';
+                playerIframe.src = url;
+            }
+
+            // ─── SERVER 5 STREAM LOADER ───────────────────────────────────────
+            async function loadServer5Stream(anime, epNum) {
+                if (state.server5.isLoading) return;
+                state.server5.isLoading = true;
+
+                try {
+                    // Step 1: Search & load episodes if not cached
+                    const hasCached = state.server5.cacheKey === anime.title
+                        && state.server5.animeSession
+                        && state.server5.episodes.length > 0;
+
+                    if (!hasCached) {
+                        showPlayerLoading('Searching Server 5...', `Looking up "${anime.title}"`);
+                    } else {
+                        showPlayerLoading('Loading episode...', `Episode ${epNum}`);
+                    }
+
+                    const { animeSession, episodes } = await server5LoadAnime(anime.title);
+
+                    // Render the Server 5 episode grid (with thumbnails) if not done yet
+                    if (!hasCached) {
+                        renderServer5Episodes(episodes, epNum, animeSession);
+                    }
+
+                    // Step 2: Find the requested episode
+                    const ep = episodes.find(e => String(e.number) === String(epNum))
+                             || episodes[epNum - 1]  // fallback: index-based
+                             || episodes[0];
+
+                    if (!ep || !ep.session) {
+                        throw new Error(`Episode ${epNum} not found on Server 5`);
+                    }
+
+                    // Step 3: Build embed URL (matching AniStream's exact approach)
+                    const epTitle = ep.title && ep.title !== `Episode ${ep.number || epNum}`
+                        ? ep.title
+                        : `${anime.title} Ep ${ep.number || epNum}`;
+                    const embedUrl = server5BuildEmbedUrl(animeSession, ep.session, epTitle);
+
+                    // Step 4: Set up iframe (matching AniStream's working config)
+                    playerIframe.removeAttribute('sandbox');
+                    playerIframe.setAttribute('allow', 'autoplay; fullscreen');
+                    playerIframe.setAttribute('scrolling', 'no');
+
+                    playerPlaceholder.style.display = 'none';
+                    playerIframe.style.display = 'block';
+                    playerIframe.src = embedUrl;
+
+                    // Step 5: Prefetch next episode
+                    const nextEp = episodes.find(e => String(e.number) === String(epNum + 1))
+                                 || episodes[epNum]; // index-based fallback
+                    if (nextEp && nextEp.session) {
+                        server5Prefetch(animeSession, nextEp.session);
+                    }
+
+                    // Update active episode highlight in S5 grid
+                    s5EpisodeGrid.querySelectorAll('.s5-ep-card').forEach(card => {
+                        card.classList.toggle('active', String(card.dataset.epnum) === String(ep.number || epNum));
+                    });
+
+                } catch (err) {
+                    console.error('[Server 5]', err);
+                    showPlayerError(`Server 5: ${err.message}. Try another server.`);
+                    showToast('Server 5 failed — try another server', '⚠️');
+                } finally {
+                    state.server5.isLoading = false;
+                }
+            }
+
+            // ─── SERVER 5 EPISODE GRID ────────────────────────────────────────
+            function renderServer5Episodes(episodes, activeEpNum, animeSession) {
+                s5EpisodeGrid.innerHTML = '';
+                episodeSection.style.display = 'none'; // hide standard grid
+                s5EpisodeSection.style.display = 'flex';
+
+                episodes.forEach((ep, i) => {
+                    const num = ep.number || (i + 1);
+                    const label = ep.title && ep.title !== `Episode ${num}` ? ep.title : '';
+                    const isActive = String(num) === String(activeEpNum);
+
+                    const card = document.createElement('div');
+                    card.className = 's5-ep-card' + (isActive ? ' active' : '');
+                    card.dataset.epnum = num;
+                    card.innerHTML = `
+                        ${ep.snapshot
+                            ? `<img class="s5-ep-thumb" src="${escapeHTML(ep.snapshot)}" alt="Ep ${num}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+                            : ''
+                        }
+                        <div class="s5-ep-thumb-placeholder" style="${ep.snapshot ? 'display:none' : ''}">▶</div>
+                        <div class="s5-ep-label">Episode ${num}${label ? `<small>${escapeHTML(label)}</small>` : ''}</div>
+                    `;
+                    card.addEventListener('click', () => {
+                        state.selectedEpisode = num;
+                        // Update history
+                        if (state.selectedAnime) {
+                            const idx = state.watchHistory.findIndex(h => h.id === state.selectedAnime.id);
+                            if (idx >= 0) { state.watchHistory[idx].episode = num; state.watchHistory[idx].timestamp = Date.now(); }
+                            else { state.watchHistory.unshift({...state.selectedAnime, episode:num, timestamp:Date.now()}); }
+                            if (state.watchHistory.length > 20) state.watchHistory = state.watchHistory.slice(0, 20);
+                            saveHistory();
+                        }
+                        loadServer5Stream(state.selectedAnime, num);
+                    });
+                    s5EpisodeGrid.appendChild(card);
+                });
+
+                // Scroll active into view
+                const activeCard = s5EpisodeGrid.querySelector('.s5-ep-card.active');
+                if (activeCard) activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // ─── EPISODE SWITCHING ────────────────────────────────────────────
+            // Called when switching providers to show correct episode UI
+            function syncEpisodeUI() {
+                if (state.selectedProvider.id === 'server5') {
+                    // If we have cached episodes, show S5 grid; otherwise hide both until loaded
+                    if (state.server5.cacheKey === state.selectedAnime?.title && state.server5.episodes.length) {
+                        episodeSection.style.display = 'none';
+                        s5EpisodeSection.style.display = 'flex';
+                        renderServer5Episodes(state.server5.episodes, state.selectedEpisode, state.server5.animeSession);
+                    } else {
+                        episodeSection.style.display = 'none';
+                        s5EpisodeSection.style.display = 'none';
+                    }
+                } else {
+                    s5EpisodeSection.style.display = 'none';
+                    renderStandardEpisodes();
+                }
+            }
+
+            // ─── STANDARD EPISODE GRID ────────────────────────────────────────
+            function renderStandardEpisodes() {
+                if (!state.selectedAnime || !state.selectedAnime.episodes) {
+                    episodeSection.style.display = 'none';
+                    return;
+                }
+                episodeSection.style.display = 'flex';
+                const total = state.selectedAnime.episodes;
+                const maxShow = Math.min(total, 200);
+                let html = '';
+                for (let i = 1; i <= maxShow; i++) {
+                    const isActive = i === state.selectedEpisode;
+                    html += `<button class="episode-btn${isActive ? ' active' : ''}" data-ep="${i}">${i}</button>`;
+                }
+                if (total > maxShow) html += `<span style="padding:8px;color:var(--text3);">+${total - maxShow} more</span>`;
+                episodeGrid.innerHTML = html;
+
+                const activeBtn = episodeGrid.querySelector('.episode-btn.active');
+                if (activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                episodeGrid.querySelectorAll('.episode-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const ep = parseInt(btn.dataset.ep);
+                        state.selectedEpisode = ep;
+                        renderStandardEpisodes();
+                        loadStream();
+                        if (state.selectedAnime) {
+                            const idx = state.watchHistory.findIndex(h => h.id === state.selectedAnime.id);
+                            if (idx >= 0) { state.watchHistory[idx].episode = ep; state.watchHistory[idx].timestamp = Date.now(); }
+                            else { state.watchHistory.unshift({...state.selectedAnime, episode: ep, timestamp: Date.now()}); }
+                            if (state.watchHistory.length > 20) state.watchHistory = state.watchHistory.slice(0, 20);
+                            saveHistory();
+                        }
+                    });
+                });
+            }
+
+            // ─── ANIME SELECTION ──────────────────────────────────────────────
+            async function selectAnime(animeData) {
+                if (!animeData) return;
+                state.selectedAnime = animeData;
+                state.selectedEpisode = 1;
+                state.selectedProvider = PROVIDERS.find(p => !p.external) || PROVIDERS[0];
+                state.selectedAudio = 'sub';
+
+                // Reset Server 5 cache when switching anime
+                state.server5 = { animeSession: null, episodes: [], isLoading: false, loadError: null, cacheKey: null };
+
+                // Update history
+                const existing = state.watchHistory.findIndex(h => h.id === animeData.id);
+                if (existing >= 0) state.watchHistory.splice(existing, 1);
+                state.watchHistory.unshift({ ...animeData, episode: 1, timestamp: Date.now() });
+                if (state.watchHistory.length > 20) state.watchHistory = state.watchHistory.slice(0, 20);
+                saveHistory();
+
+                updateWatchPageUI();
+                renderProviderDropdown();
+                updateAudioToggle();
+                syncEpisodeUI();
+                showPlayerIdle();
+                openWatchPage();
+                $('#watchPageTitle').textContent = animeData.title;
+                showToast(`Loaded: ${animeData.title}`, '🎉');
+                loadAnimeRelations(animeData.id);
+            }
+
+            // ─── ANIME CARDS ──────────────────────────────────────────────────
             function createAnimeCard(anime, compact = false) {
                 if (!anime) return document.createElement('div');
                 const rating = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : null;
@@ -628,7 +1018,8 @@
                 if (compact) div.style.flex = '0 0 125px';
                 div.innerHTML = `
                     <div class="anime-card-img-wrap">
-                        <img src="${escapeHTML(anime.coverImage)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                        <img src="${escapeHTML(anime.coverImage)}" alt="" loading="lazy"
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
                         <div style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;color:var(--text3);font-size:2rem;">🎬</div>
                         ${rating ? `<span class="anime-card-badge">⭐ ${rating}</span>` : ''}
                         ${epText ? `<span class="anime-card-ep-badge">${epText}</span>` : ''}
@@ -640,12 +1031,14 @@
                 div.addEventListener('click', () => selectAnime(anime));
                 return div;
             }
+
             function createSkeletonCard(compact = false) {
                 const div = document.createElement('div');
                 div.className = 'skeleton skeleton-card';
                 if (compact) div.style.flex = '0 0 125px';
                 return div;
             }
+
             function populateRow(container, data, compact = false) {
                 container.innerHTML = '';
                 if (!data || data.length === 0) {
@@ -654,6 +1047,7 @@
                 }
                 data.forEach(a => container.appendChild(createAnimeCard(a, compact)));
             }
+
             function populateGrid(container, data) {
                 container.innerHTML = '';
                 if (!data || data.length === 0) {
@@ -668,6 +1062,7 @@
                 data.forEach(a => container.appendChild(createAnimeCard(a)));
             }
 
+            // ─── HOME PAGE ────────────────────────────────────────────────────
             async function loadHomePage() {
                 populateRow(trendingRow, []);
                 populateGrid(popularGrid, []);
@@ -678,15 +1073,19 @@
                     state.popularData = popular.map(formatAnimeData).filter(Boolean);
                     state.topRatedData = topRated.map(formatAnimeData).filter(Boolean);
                 } catch (e) { console.error('Home data error:', e); }
+
                 if (state.trendingData.length > 0) {
                     const hero = state.trendingData[0];
                     state.heroAnime = hero;
                     heroBg.src = hero.coverImage;
                     heroTitle.textContent = hero.title;
-                    const rating = hero.averageScore ? `⭐ ${(hero.averageScore/10).toFixed(1)}` : '';
+                    const rating = hero.averageScore ? `⭐ ${(hero.averageScore / 10).toFixed(1)}` : '';
                     heroMeta.innerHTML = [hero.format, hero.episodes ? `${hero.episodes} eps` : '', rating, hero.season]
                         .filter(Boolean).map(s => `<span>${escapeHTML(s)}</span>`).join('');
-                } else { heroTitle.textContent = 'Could not load featured anime'; }
+                } else {
+                    heroTitle.textContent = 'Could not load featured anime';
+                }
+
                 populateRow(trendingRow, state.trendingData, true);
                 populateGrid(popularGrid, state.popularData);
                 populateGrid(topRatedGrid, state.topRatedData);
@@ -712,13 +1111,17 @@
                 });
             }
 
+            // ─── NAVIGATION ───────────────────────────────────────────────────
             window.handleHeroClick = () => { if (state.heroAnime) selectAnime(state.heroAnime); };
+
             window.goToSection = (sectionId) => {
+                // Make sure home page is visible first
+                homePage.classList.remove('hidden');
+                watchPage.classList.remove('active');
+                browsePage.classList.remove('active');
                 const el = document.getElementById(sectionId + 'Section');
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                $$('.nav-link').forEach(b => b.classList.remove('active'));
-                const btn = document.querySelector(`.nav-link[data-page="${sectionId}"]`);
-                if (btn) btn.classList.add('active');
+                if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                setActiveNav(sectionId);
             };
 
             function setActiveNav(page) {
@@ -734,12 +1137,12 @@
                 setActiveNav('home');
                 searchInput.value = '';
                 searchDropdown.classList.remove('active');
+                // Stop iframe playback
                 playerIframe.src = '';
                 playerIframe.style.display = 'none';
-                playerPlaceholder.style.display = 'flex';
-                playerPlaceholder.querySelector('.icon').textContent = '🎬';
-                playerPlaceholder.querySelector('p').textContent = 'Select an episode to start streaming';
+                showPlayerIdle();
                 episodeSection.style.display = 'none';
+                s5EpisodeSection.style.display = 'none';
                 audioToggleWrap.style.display = 'none';
                 $('#watchPageTitle').textContent = '';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -762,6 +1165,7 @@
                 loadBrowsePage(1);
             };
 
+            // ─── BROWSE ───────────────────────────────────────────────────────
             async function loadBrowsePage(page) {
                 if (state.isLoadingBrowse) return;
                 state.isLoadingBrowse = true;
@@ -798,29 +1202,33 @@
                 loadBrowsePage(page);
             };
 
-            async function selectAnime(animeData) {
-                if (!animeData) return;
-                state.selectedAnime = animeData;
-                state.selectedEpisode = 1;
-                state.selectedProvider = PROVIDERS.find(p => !p.external) || PROVIDERS[0];
-                state.selectedAudio = 'sub';
-                state.server5Data = { animeSession: null, episodes: [] };
-                const existing = state.watchHistory.findIndex(h => h.id === animeData.id);
-                if (existing >= 0) state.watchHistory.splice(existing, 1);
-                state.watchHistory.unshift({ ...animeData, episode: 1, timestamp: Date.now() });
-                if (state.watchHistory.length > 20) state.watchHistory = state.watchHistory.slice(0, 20);
-                saveHistory();
-                updateWatchPageUI();
-                renderProviderDropdown();
-                updateAudioToggle();
-                renderEpisodes();
-                await loadStream();
-                openWatchPage();
-                $('#watchPageTitle').textContent = animeData.title;
-                showToast(`Loaded: ${animeData.title}`, '🎉');
-                loadAnimeRelations(animeData.id);
+            // ─── SIDEBAR ──────────────────────────────────────────────────────
+            function updateWatchPageUI() {
+                const a = state.selectedAnime;
+                if (!a) return;
+                $('#sidebarTitle').textContent = a.title || 'Unknown';
+                const tags = [];
+                if (a.format) tags.push(`<span class="tag">${escapeHTML(a.format)}</span>`);
+                if (a.averageScore) tags.push(`<span class="tag star">⭐ ${(a.averageScore / 10).toFixed(1)}</span>`);
+                if (a.episodes) tags.push(`<span class="tag">📺 ${a.episodes} eps</span>`);
+                if (a.season) tags.push(`<span class="tag">📅 ${escapeHTML(a.season)}</span>`);
+                $('#sidebarTags').innerHTML = tags.join('') || '<span class="tag">—</span>';
+                const desc = a.description || 'No description.';
+                $('#sidebarDesc').textContent = desc.length > 350 ? desc.substring(0, 350) + '...' : desc;
+                if (a.genres && a.genres.length) {
+                    $('#sidebarGenres').innerHTML = a.genres.slice(0, 8).map(g => `<span class="genre">${escapeHTML(g)}</span>`).join('');
+                } else { $('#sidebarGenres').innerHTML = ''; }
+                if (a.coverImage) {
+                    $('#sidebarCover').src = a.coverImage;
+                    $('#sidebarCover').style.display = 'block';
+                    $('#sidebarCoverPlaceholder').style.display = 'none';
+                } else {
+                    $('#sidebarCover').style.display = 'none';
+                    $('#sidebarCoverPlaceholder').style.display = 'flex';
+                }
             }
 
+            // ─── RELATIONS ────────────────────────────────────────────────────
             async function loadAnimeRelations(animeId) {
                 try {
                     const rels = await fetchAnimeRelations(animeId);
@@ -833,77 +1241,55 @@
             }
 
             function renderRelations() {
-                if (!state.animeRelations.length) {
-                    sidebarRelations.innerHTML = '';
-                    return;
-                }
+                if (!state.animeRelations.length) { sidebarRelations.innerHTML = ''; return; }
                 sidebarRelations.innerHTML = `
                     <span style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--text3);">📺 Related Seasons</span>
                     ${state.animeRelations.map(r => `
                         <div class="related-season-item" onclick="window.selectRelatedAnime(${r.id})">
                             <span>${escapeHTML(r.title)}</span>
-                            <span style="font-size:0.7rem;color:var(--text3);">${r.format} ${r.season}</span>
+                            <span style="font-size:0.7rem;color:var(--text3);">${escapeHTML(r.format)} ${escapeHTML(r.season)}</span>
                         </div>
                     `).join('')}
                 `;
             }
+
             window.selectRelatedAnime = (id) => {
-                fetchAnimeById(id).then(anime => {
-                    if (anime) selectAnime(anime);
-                });
+                fetchAnimeById(id).then(anime => { if (anime) selectAnime(anime); });
             };
-            async function fetchAnimeById(id) {
-                const q = `query ($id:Int) { Media(id:$id) { ${MEDIA_FIELDS} } }`;
-                const data = await anilistQuery(q, { id });
-                return data.Media ? formatAnimeData(data.Media) : null;
-            }
 
-            function updateWatchPageUI() {
-                const a = state.selectedAnime;
-                if (!a) return;
-                $('#sidebarTitle').textContent = a.title || 'Unknown';
-                const tags = [];
-                if (a.format) tags.push(`<span class="tag">${escapeHTML(a.format)}</span>`);
-                if (a.averageScore) tags.push(`<span class="tag star">⭐ ${(a.averageScore/10).toFixed(1)}</span>`);
-                if (a.episodes) tags.push(`<span class="tag">📺 ${a.episodes} eps</span>`);
-                if (a.season) tags.push(`<span class="tag">📅 ${escapeHTML(a.season)}</span>`);
-                $('#sidebarTags').innerHTML = tags.join('') || '<span class="tag">—</span>';
-                const desc = a.description || 'No description.';
-                $('#sidebarDesc').textContent = desc.length > 350 ? desc.substring(0, 350) + '...' : desc;
-                if (a.genres && a.genres.length) {
-                    $('#sidebarGenres').innerHTML = a.genres.slice(0,8).map(g => `<span class="genre">${escapeHTML(g)}</span>`).join('');
-                } else { $('#sidebarGenres').innerHTML = ''; }
-                if (a.coverImage) {
-                    $('#sidebarCover').src = a.coverImage;
-                    $('#sidebarCover').style.display = 'block';
-                    $('#sidebarCoverPlaceholder').style.display = 'none';
-                } else {
-                    $('#sidebarCover').style.display = 'none';
-                    $('#sidebarCoverPlaceholder').style.display = 'flex';
-                }
-            }
-
+            // ─── PROVIDER DROPDOWN ────────────────────────────────────────────
             function renderProviderDropdown() {
                 provDot.style.backgroundColor = state.selectedProvider.color;
                 provLabel.textContent = state.selectedProvider.name;
                 providerDropdownMenu.innerHTML = PROVIDERS.map(p => {
                     const sel = p.id === state.selectedProvider.id ? ' selected' : '';
                     return `<div class="provider-option${sel}" data-provider="${p.id}">
-                        <span class="prov-dot" style="background-color:${p.color};"></span>
-                        <span>${p.icon} ${p.name}${p.external?' ↗':''}</span>
-                        <span class="prov-desc">${p.description}</span>
+                        <span class="prov-dot" style="background-color:${p.color};width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block;"></span>
+                        <span>${escapeHTML(p.icon)} ${escapeHTML(p.name)}${p.external ? ' ↗' : ''}</span>
+                        <span class="prov-desc">${escapeHTML(p.description)}</span>
                     </div>`;
                 }).join('');
+
                 providerDropdownMenu.querySelectorAll('.provider-option').forEach(opt => {
                     opt.addEventListener('click', (e) => {
                         e.stopPropagation();
                         const pid = opt.dataset.provider;
                         const prov = PROVIDERS.find(p => p.id === pid);
                         if (prov) {
+                            const providerChanged = prov.id !== state.selectedProvider.id;
                             state.selectedProvider = prov;
                             renderProviderDropdown();
                             updateAudioToggle();
-                            loadStream();
+
+                            if (providerChanged) {
+                                // Reset Server 5 loading state when leaving S5
+                                if (prov.id !== 'server5') {
+                                    state.server5.isLoading = false;
+                                }
+                                syncEpisodeUI();
+                                loadStream();
+                            }
+
                             if (prov.external) showToast(`${prov.name} opens in a new tab`, '↗️');
                         }
                         state.providerDropdownOpen = false;
@@ -911,10 +1297,12 @@
                     });
                 });
             }
+
             window.toggleProviderDropdown = () => {
                 state.providerDropdownOpen = !state.providerDropdownOpen;
                 providerDropdownWrap.classList.toggle('open', state.providerDropdownOpen);
             };
+
             document.addEventListener('click', (e) => {
                 if (!providerDropdownWrap.contains(e.target)) {
                     state.providerDropdownOpen = false;
@@ -922,160 +1310,77 @@
                 }
             });
 
+            // ─── AUDIO TOGGLE ─────────────────────────────────────────────────
             function updateAudioToggle() {
                 if (state.selectedProvider.supportsAudio && state.selectedAnime) {
                     audioToggleWrap.style.display = 'flex';
                     audioToggleWrap.querySelectorAll('.audio-btn').forEach(b => {
                         b.classList.toggle('active', b.dataset.audio === state.selectedAudio);
                     });
-                } else { audioToggleWrap.style.display = 'none'; }
-            }
-            window.setAudio = (audio) => { state.selectedAudio = audio; updateAudioToggle(); loadStream(); };
-
-            function renderEpisodes() {
-                if (!state.selectedAnime || !state.selectedAnime.episodes) { episodeSection.style.display = 'none'; return; }
-                episodeSection.style.display = 'flex';
-                const total = state.selectedAnime.episodes;
-                const maxShow = Math.min(total, 200);
-                let html = '';
-                for (let i = 1; i <= maxShow; i++) {
-                    const isActive = i === state.selectedEpisode;
-                    html += `<button class="episode-btn${isActive?' active':''}" data-ep="${i}">${i}</button>`;
+                } else {
+                    audioToggleWrap.style.display = 'none';
                 }
-                if (total > maxShow) html += `<span style="padding:8px;color:var(--text3);">+${total-maxShow} more</span>`;
-                episodeGrid.innerHTML = html;
-                const activeBtn = episodeGrid.querySelector('.episode-btn.active');
-                if (activeBtn) activeBtn.scrollIntoView({ behavior:'smooth', block:'nearest' });
-                episodeGrid.querySelectorAll('.episode-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const ep = parseInt(btn.dataset.ep);
-                        state.selectedEpisode = ep;
-                        renderEpisodes();
-                        loadStream();
-                        if (state.selectedAnime) {
-                            const idx = state.watchHistory.findIndex(h => h.id === state.selectedAnime.id);
-                            if (idx >= 0) { state.watchHistory[idx].episode = ep; state.watchHistory[idx].timestamp = Date.now(); }
-                            else { state.watchHistory.unshift({...state.selectedAnime, episode:ep, timestamp:Date.now()}); }
-                            if (state.watchHistory.length > 20) state.watchHistory = state.watchHistory.slice(0,20);
-                            saveHistory();
-                        }
-                    });
-                });
             }
 
-            async function loadStream() {
-                if (!state.selectedAnime || !state.selectedEpisode || !state.selectedProvider) return;
-                const provider = state.selectedProvider;
+            window.setAudio = (audio) => {
+                state.selectedAudio = audio;
+                updateAudioToggle();
+                loadStream();
+            };
 
-                // Always hide and clear iframe first
-                playerIframe.style.display = 'none';
-                playerIframe.src = '';
-
-                if (provider.id === 'server5') {
-                    try {
-                        // 1. Get anime session
-                        if (!state.server5Data.animeSession) {
-                            const searchUrl = `${SERVER5_BASE}/search?q=${encodeURIComponent(state.selectedAnime.title)}`;
-                            const results = await fetch(searchUrl, SKIP_WARNING).then(r => r.json());
-                            if (!results || results.length === 0) throw new Error('Anime not found on Server 5');
-                            state.server5Data.animeSession = results[0].session;
-                            state.server5Data.episodes = [];
-                        }
-                        const animeSession = state.server5Data.animeSession;
-                        // 2. Get episode list
-                        if (!state.server5Data.episodes.length) {
-                            const epUrl = `${SERVER5_BASE}/episodes?session=${animeSession}`;
-                            const eps = await fetch(epUrl, SKIP_WARNING).then(r => r.json());
-                            if (!eps) throw new Error('No episodes found');
-                            state.server5Data.episodes = eps;
-                        }
-                        const episodeNumber = state.selectedEpisode;
-                        const ep = state.server5Data.episodes.find(e => e.number == episodeNumber);
-                        if (!ep) throw new Error('Episode not found');
-
-                        // 3. Build embed URL (exactly as in the working example)
-                        const embedUrl = `${SERVER5_BASE}/embed?anime_session=${animeSession}&episode_session=${ep.session}&title=${encodeURIComponent(state.selectedAnime.title + ' Ep ' + episodeNumber)}`;
-
-                        // 4. Set iframe attributes (matching the example)
-                        playerIframe.removeAttribute('sandbox');
-                        playerIframe.setAttribute('allow', 'autoplay; fullscreen');
-                        playerIframe.setAttribute('scrolling', 'no');
-                        playerIframe.style.display = 'block';
-                        playerIframe.src = embedUrl;
-                        playerPlaceholder.style.display = 'none';
-
-                        // 5. Prefetch next episode
-                        const nextEp = state.server5Data.episodes.find(e => e.number == episodeNumber + 1);
-                        if (nextEp) {
-                            fetch(`${SERVER5_BASE}/prefetch?anime_session=${animeSession}&episode_session=${nextEp.session}`, SKIP_WARNING).catch(() => {});
-                        }
-                    } catch (e) {
-                        console.error(e);
-                        playerPlaceholder.style.display = 'flex';
-                        playerPlaceholder.querySelector('.icon').textContent = '⚠️';
-                        playerPlaceholder.querySelector('p').textContent = 'Failed to load from Server 5. Try another provider or episode.';
-                    }
-                    return;
-                }
-
-                // Other servers (iframe or external)
-                playerIframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms allow-presentation');
-                playerIframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
-                playerIframe.removeAttribute('scrolling');
-
-                const url = provider.getUrl(
-                    state.selectedAnime.id,
-                    state.selectedAnime.season,
-                    state.selectedEpisode,
-                    state.selectedAudio
-                );
-                if (provider.external) {
-                    window.open(url, '_blank');
-                    showToast(`Opening ${provider.name} in new tab...`, '↗️');
-                    return;
-                }
-                playerPlaceholder.style.display = 'none';
-                playerIframe.style.display = 'block';
-                playerIframe.src = url;
-                playerIframe.onerror = () => {
-                    playerIframe.style.display = 'none';
-                    playerPlaceholder.style.display = 'flex';
-                    playerPlaceholder.querySelector('.icon').textContent = '⚠️';
-                    playerPlaceholder.querySelector('p').textContent = 'Failed to load. Try another provider or episode.';
-                };
-            }
-
+            // ─── SEARCH ───────────────────────────────────────────────────────
             async function handleSearchInput() {
                 const query = searchInput.value.trim();
-                if (query.length < 2) { searchDropdown.classList.remove('active'); searchDropdown.innerHTML = ''; return; }
-                searchDropdown.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);">🔍 Searching...</div>';
-                searchDropdown.classList.add('active');
-                const results = await searchAnilist(query);
-                if (!results || results.length === 0) {
-                    searchDropdown.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);">😔 No results found</div>';
+                if (query.length < 2) {
+                    searchDropdown.classList.remove('active');
+                    searchDropdown.innerHTML = '';
                     return;
                 }
-                searchDropdown.innerHTML = results.map(media => {
-                    const f = formatAnimeData(media);
-                    if (!f) return '';
-                    const rating = f.averageScore ? `⭐${(f.averageScore/10).toFixed(1)}` : '';
-                    const meta = [f.format, f.episodes?`${f.episodes}eps`:'', rating].filter(Boolean).join(' · ');
-                    return `<div class="search-result-item" data-json='${JSON.stringify(f).replace(/'/g,"&#39;")}'>
-                        <img class="search-result-img" src="${f.coverImage}" onerror="this.style.display='none'">
-                        <div><div class="search-result-title">${escapeHTML(f.title)}</div>
-                        <div class="search-result-meta">${escapeHTML(meta)}</div></div>
-                    </div>`;
-                }).join('');
-                searchDropdown.querySelectorAll('.search-result-item').forEach(item => {
-                    item.addEventListener('click', () => {
-                        try {
-                            const data = JSON.parse(item.dataset.json);
-                            selectAnime(data);
-                            searchDropdown.classList.remove('active');
-                            searchInput.value = data.title || '';
-                        } catch (e) {}
+                searchDropdown.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);">🔍 Searching...</div>';
+                searchDropdown.classList.add('active');
+                try {
+                    const results = await searchAnilist(query);
+                    if (!results || results.length === 0) {
+                        searchDropdown.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);">😔 No results found</div>';
+                        return;
+                    }
+                    searchDropdown.innerHTML = results.map(media => {
+                        const f = formatAnimeData(media);
+                        if (!f) return '';
+                        const rating = f.averageScore ? `⭐${(f.averageScore / 10).toFixed(1)}` : '';
+                        const meta = [f.format, f.episodes ? `${f.episodes}eps` : '', rating].filter(Boolean).join(' · ');
+                        // Safe JSON serialization for data attribute
+                        const safeJson = JSON.stringify(f).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+                        return `<div class="search-result-item" data-id="${f.id}">
+                            <img class="search-result-img" src="${escapeHTML(f.coverImage)}" onerror="this.style.display='none'">
+                            <div>
+                                <div class="search-result-title">${escapeHTML(f.title)}</div>
+                                <div class="search-result-meta">${escapeHTML(meta)}</div>
+                            </div>
+                        </div>`;
+                    }).join('');
+
+                    // Store results in a map for lookup by id (avoids data-json attribute issues)
+                    const resultMap = {};
+                    results.forEach(media => {
+                        const f = formatAnimeData(media);
+                        if (f) resultMap[f.id] = f;
                     });
-                });
+
+                    searchDropdown.querySelectorAll('.search-result-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            const id = parseInt(item.dataset.id);
+                            const data = resultMap[id];
+                            if (data) {
+                                selectAnime(data);
+                                searchDropdown.classList.remove('active');
+                                searchInput.value = data.title || '';
+                            }
+                        });
+                    });
+                } catch (e) {
+                    searchDropdown.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text3);">Error searching: ${escapeHTML(e.message)}</div>`;
+                }
             }
 
             searchInput.addEventListener('input', () => {
@@ -1083,22 +1388,34 @@
                 state.searchTimeout = setTimeout(handleSearchInput, 350);
             });
             searchInput.addEventListener('focus', () => {
-                if (searchInput.value.trim().length >= 2 && searchDropdown.innerHTML) searchDropdown.classList.add('active');
+                if (searchInput.value.trim().length >= 2 && searchDropdown.innerHTML) {
+                    searchDropdown.classList.add('active');
+                }
             });
             document.addEventListener('click', (e) => {
-                if (!searchDropdown.contains(e.target) && e.target !== searchInput) searchDropdown.classList.remove('active');
+                if (!searchDropdown.contains(e.target) && e.target !== searchInput) {
+                    searchDropdown.classList.remove('active');
+                }
             });
-            searchInput.addEventListener('keydown', (e) => { if (e.key==='Escape') { searchDropdown.classList.remove('active'); searchInput.blur(); } });
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') { searchDropdown.classList.remove('active'); searchInput.blur(); }
+                if (e.key === 'Enter') {
+                    // Click first result on Enter
+                    const first = searchDropdown.querySelector('.search-result-item');
+                    if (first) first.click();
+                }
+            });
 
+            // ─── INIT ─────────────────────────────────────────────────────────
             function init() {
                 renderProviderDropdown();
                 updateAudioToggle();
                 episodeSection.style.display = 'none';
+                s5EpisodeSection.style.display = 'none';
                 audioToggleWrap.style.display = 'none';
                 loadHomePage();
             }
             init();
-            console.log('🐺 ThyAnime ready! Server 5 uses the exact embed method from the API example.');
         })();
     </script>
 </body>
