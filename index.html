@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ThyAnime — Watch Anime Online Free</title>
     <link rel="icon" type="image/gif" href="https://media1.tenor.com/m/2thZuhJSwFsAAAAC/wolf-girl-howling.gif">
-    <!-- hls.js for Server 5 direct HLS playback -->
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :root {
             --bg: #0b0b10;
@@ -182,7 +180,7 @@
         @media (max-width:950px) { .watch-layout { grid-template-columns:1fr; } }
         .player-card { background:#000; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); box-shadow:0 8px 30px rgba(0,0,0,0.4); }
         .player-wrapper { position:relative; width:100%; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; background:#000; }
-        .player-wrapper iframe, .player-wrapper video { width:100%; height:100%; border:none; position:absolute; top:0; left:0; }
+        .player-wrapper iframe { width:100%; height:100%; border:none; position:absolute; top:0; left:0; }
         .player-placeholder { display:flex; flex-direction:column; align-items:center; gap:14px; color:var(--text3); text-align:center; padding:40px; }
         .player-placeholder .icon { font-size:3.5rem; opacity:0.5; animation:float 3s ease-in-out infinite; }
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
@@ -364,7 +362,6 @@
                             <iframe id="playerIframe" style="display:none;" allowfullscreen
                                 allow="autoplay; encrypted-media; picture-in-picture"
                                 sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-presentation"></iframe>
-                            <video id="playerVideo" style="display:none;" controls playsinline></video>
                         </div>
                     </div>
                     <div class="controls-row">
@@ -462,9 +459,12 @@
                     name: "Server 5",
                     icon: "🌐",
                     color: "#f97316",
-                    description: "New API – HLS direct (sub/dub)",
-                    getUrl: () => '',
-                    supportsAudio: true,   // we handle sub/dub via source selection
+                    description: "New API, sub & dub via embed",
+                    getUrl: (id, season, ep, audio = "sub") => {
+                        // This URL will be set dynamically after sessions are loaded
+                        return '';
+                    },
+                    supportsAudio: true,
                     external: false,
                 }
             ];
@@ -486,7 +486,6 @@
                 isLoadingBrowse: false,
                 animeRelations: [],
                 server5Data: { animeSession: null, episodes: [] },
-                hls: null,  // hls.js instance
             };
 
             try {
@@ -506,7 +505,6 @@
             const browsePage = $('#browsePage');
             const playerPlaceholder = $('#playerPlaceholder');
             const playerIframe = $('#playerIframe');
-            const playerVideo = $('#playerVideo');
             const episodeSection = $('#episodeSection');
             const episodeGrid = $('#episodeGrid');
             const audioToggleWrap = $('#audioToggleWrap');
@@ -738,12 +736,8 @@
                 setActiveNav('home');
                 searchInput.value = '';
                 searchDropdown.classList.remove('active');
-                // Stop any playing media
-                if (state.hls) { state.hls.destroy(); state.hls = null; }
                 playerIframe.src = '';
                 playerIframe.style.display = 'none';
-                playerVideo.style.display = 'none';
-                playerVideo.src = '';
                 playerPlaceholder.style.display = 'flex';
                 playerPlaceholder.querySelector('.icon').textContent = '🎬';
                 playerPlaceholder.querySelector('p').textContent = 'Select an episode to start streaming';
@@ -975,41 +969,40 @@
                 if (!state.selectedAnime || !state.selectedEpisode || !state.selectedProvider) return;
                 const provider = state.selectedProvider;
 
-                // Hide all media elements first
+                // Hide iframe and show placeholder while loading
                 playerIframe.style.display = 'none';
                 playerIframe.src = '';
-                if (state.hls) { state.hls.destroy(); state.hls = null; }
-                playerVideo.style.display = 'none';
-                playerVideo.src = '';
 
                 if (provider.id === 'server5') {
                     try {
-                        playerPlaceholder.style.display = 'none';
-                        const videoUrl = await getServer5VideoUrl();
-                        // Use hls.js if supported, otherwise fallback to native HLS (iOS)
-                        if (Hls.isSupported()) {
-                            state.hls = new Hls();
-                            state.hls.loadSource(videoUrl);
-                            state.hls.attachMedia(playerVideo);
-                            state.hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                                playerVideo.style.display = 'block';
-                                playerVideo.play().catch(e => console.warn('Autoplay prevented:', e));
-                            });
-                            state.hls.on(Hls.Events.ERROR, (event, data) => {
-                                if (data.fatal) {
-                                    showToast('HLS error – try another server', '⚠️');
-                                    playerVideo.style.display = 'none';
-                                    playerPlaceholder.style.display = 'flex';
-                                }
-                            });
-                        } else if (playerVideo.canPlayType('application/vnd.apple.mpegurl')) {
-                            // Native HLS for iOS/Safari
-                            playerVideo.src = videoUrl;
-                            playerVideo.style.display = 'block';
-                            playerVideo.play().catch(e => console.warn('Autoplay prevented:', e));
-                        } else {
-                            throw new Error('HLS not supported in this browser');
+                        // Ensure we have the sessions
+                        if (!state.server5Data.animeSession) {
+                            const searchUrl = `${SERVER5_BASE}/search?q=${encodeURIComponent(state.selectedAnime.title)}`;
+                            const results = await fetch(searchUrl).then(r => r.json());
+                            if (!results || results.length === 0) throw new Error('Anime not found on Server 5');
+                            state.server5Data.animeSession = results[0].session;
+                            state.server5Data.episodes = [];
                         }
+                        const animeSession = state.server5Data.animeSession;
+                        if (!state.server5Data.episodes.length) {
+                            const epUrl = `${SERVER5_BASE}/episodes?session=${animeSession}`;
+                            const eps = await fetch(epUrl).then(r => r.json());
+                            if (!eps) throw new Error('No episodes found');
+                            state.server5Data.episodes = eps;
+                        }
+                        const episodeNumber = state.selectedEpisode;
+                        const ep = state.server5Data.episodes.find(e => e.number == episodeNumber);
+                        if (!ep) throw new Error('Episode not found');
+
+                        // Build embed URL exactly as shown
+                        const embedUrl = `${SERVER5_BASE}/embed?anime_session=${animeSession}&episode_session=${ep.session}&title=${encodeURIComponent(state.selectedAnime.title + ' Ep ' + episodeNumber)}`;
+
+                        // Remove sandbox and set minimal attributes for embed
+                        playerIframe.removeAttribute('sandbox');
+                        playerIframe.setAttribute('allow', 'autoplay; fullscreen');
+                        playerIframe.style.display = 'block';
+                        playerIframe.src = embedUrl;
+                        playerPlaceholder.style.display = 'none';
                     } catch (e) {
                         console.error(e);
                         playerPlaceholder.style.display = 'flex';
@@ -1019,7 +1012,7 @@
                     return;
                 }
 
-                // Other servers use iframe
+                // Other servers
                 playerIframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms allow-presentation');
                 playerIframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
                 playerIframe.removeAttribute('scrolling');
@@ -1044,43 +1037,6 @@
                     playerPlaceholder.querySelector('.icon').textContent = '⚠️';
                     playerPlaceholder.querySelector('p').textContent = 'Failed to load. Try another provider or episode.';
                 };
-            }
-
-            async function getServer5VideoUrl() {
-                const anime = state.selectedAnime;
-                // 1. Get anime session
-                if (!state.server5Data.animeSession) {
-                    const searchUrl = `${SERVER5_BASE}/search?q=${encodeURIComponent(anime.title)}`;
-                    const results = await fetch(searchUrl).then(r => r.json());
-                    if (!results || results.length === 0) throw new Error('Anime not found on Server 5');
-                    state.server5Data.animeSession = results[0].session;
-                    state.server5Data.episodes = [];
-                }
-                const animeSession = state.server5Data.animeSession;
-                // 2. Get episode list
-                if (!state.server5Data.episodes.length) {
-                    const epUrl = `${SERVER5_BASE}/episodes?session=${animeSession}`;
-                    const eps = await fetch(epUrl).then(r => r.json());
-                    if (!eps) throw new Error('No episodes found');
-                    state.server5Data.episodes = eps;
-                }
-                const episodeNumber = state.selectedEpisode;
-                const ep = state.server5Data.episodes.find(e => e.number == episodeNumber);
-                if (!ep) throw new Error('Episode not found');
-                // 3. Get sources
-                const sourceUrl = `${SERVER5_BASE}/sources?anime_session=${animeSession}&episode_session=${ep.session}`;
-                const sources = await fetch(sourceUrl).then(r => r.json());
-                if (!sources || sources.length === 0) throw new Error('No sources available');
-                // 4. Filter by audio (sub=jpn, dub=eng)
-                const desiredAudio = state.selectedAudio === 'dub' ? 'eng' : 'jpn';
-                const filtered = sources.filter(s => s.audio === desiredAudio);
-                const chosen = filtered.length > 0 ? filtered[0] : sources[0]; // fallback to first
-                // 5. Get proxy URL
-                const m3u8Url = `${SERVER5_BASE}/m3u8?url=${encodeURIComponent(chosen.url)}`;
-                const m3u8Data = await fetch(m3u8Url).then(r => r.json());
-                if (!m3u8Data || !m3u8Data.proxy_url) throw new Error('Could not resolve stream');
-                // Return absolute URL (proxy_url is relative to server)
-                return `${SERVER5_BASE}${m3u8Data.proxy_url}`;
             }
 
             async function handleSearchInput() {
@@ -1136,7 +1092,7 @@
                 loadHomePage();
             }
             init();
-            console.log('🐺 ThyAnime ready! Server 5 now uses direct HLS playback.');
+            console.log('🐺 ThyAnime ready! Server 5 uses the official embed URL.');
         })();
     </script>
 </body>
