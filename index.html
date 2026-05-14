@@ -8,6 +8,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
     <style>
         :root {
             --bg: #080810;
@@ -148,6 +153,86 @@
         .browse-page { display: none; flex-direction: column; gap: 24px; }
         .browse-page.active { display: flex; }
 
+        /* ── LIVE COUNTER ─────────────────────────────────────────────────── */
+        .live-counter-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 18px;
+            background: linear-gradient(135deg, rgba(244,117,33,0.08) 0%, rgba(244,117,33,0.04) 100%);
+            border: 1px solid rgba(244,117,33,0.2);
+            border-radius: 14px;
+            width: fit-content;
+            user-select: none;
+            animation: counterFadeIn 0.5s var(--ease);
+        }
+        @keyframes counterFadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+        .live-dot-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 10px;
+            height: 10px;
+        }
+        .live-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 0 6px rgba(34,197,94,0.8);
+        }
+        .live-dot::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: rgba(34,197,94,0.25);
+            animation: ping 1.6s cubic-bezier(0,0,0.2,1) infinite;
+        }
+        @keyframes ping {
+            0%   { transform: scale(1);   opacity: 0.8; }
+            80%  { transform: scale(2.4); opacity: 0; }
+            100% { transform: scale(2.4); opacity: 0; }
+        }
+
+        .live-label {
+            font-family: var(--font);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #22c55e;
+        }
+
+        .live-divider {
+            width: 1px; height: 16px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .live-count-wrap {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+        .live-count {
+            font-family: var(--font);
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.03em;
+            min-width: 24px;
+            transition: all 0.4s var(--ease);
+        }
+        .live-count-label {
+            font-family: var(--font);
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text2);
+        }
+
         /* ── HERO ─────────────────────────────────────────────────────────── */
         .hero-section {
             position: relative; border-radius: 20px; overflow: hidden;
@@ -280,8 +365,6 @@
             box-shadow: 0 8px 40px rgba(0,0,0,0.6);
         }
 
-        /* KEY: position relative + isolation:isolate so the watermark
-           stacks in its own stacking context — works in Chrome fullscreen */
         .player-wrapper {
             position: relative; width: 100%; aspect-ratio: 16/9;
             display: flex; align-items: center; justify-content: center;
@@ -293,17 +376,12 @@
             position: absolute; top: 0; left: 0; z-index: 1;
         }
 
-        /* ── FULLSCREEN-COMPATIBLE WATERMARK ─────────────────────────────── */
-        /* Uses ::before on the wrapper so it shares the same stacking context
-           as the iframe. In fullscreen the browser promotes the entire
-           .player-wrapper element, so ::before travels with it.            */
         .player-wrapper::before {
             content: '';
             position: absolute;
             inset: 0;
             pointer-events: none;
             z-index: 2;
-            /* No visual here — the actual watermark is the .player-watermark div */
         }
         .player-watermark {
             position: absolute;
@@ -324,7 +402,6 @@
             transition: opacity 0.5s var(--ease);
             opacity: 0.9;
         }
-        /* Fade slightly on hover so it doesn't obstruct controls */
         .player-wrapper:hover .player-watermark { opacity: 0.3; }
         .player-watermark img {
             width: 24px; height: 24px; border-radius: 50%;
@@ -338,10 +415,6 @@
             white-space: nowrap;
         }
 
-        /* To make the watermark appear in fullscreen we need to ensure it's
-           inside the fullscreened element. We achieve this by making the
-           .player-wrapper the fullscreen target and using JS to call
-           requestFullscreen() on it instead of the iframe.               */
         .player-wrapper:fullscreen,
         .player-wrapper:-webkit-full-screen {
             background: #000;
@@ -521,6 +594,8 @@
             .anime-card { flex: 0 0 125px; }
             .skeleton-card { flex: 0 0 125px; }
             .app { padding: 18px 14px 60px; }
+            .live-counter-bar { padding: 8px 13px; }
+            .live-count { font-size: 0.9rem; }
         }
     </style>
 </head>
@@ -550,6 +625,20 @@
     <div class="app">
         <!-- HOME -->
         <div class="home-page" id="homePage">
+
+            <!-- ── LIVE VIEWER COUNTER ── -->
+            <div class="live-counter-bar" id="liveCounterBar">
+                <div class="live-dot-wrap">
+                    <div class="live-dot"></div>
+                </div>
+                <span class="live-label">Live</span>
+                <div class="live-divider"></div>
+                <div class="live-count-wrap">
+                    <span class="live-count" id="liveCountNumber">—</span>
+                    <span class="live-count-label" id="liveCountLabel">viewers watching</span>
+                </div>
+            </div>
+
             <div class="hero-section" id="heroSection" onclick="handleHeroClick()">
                 <img class="hero-bg" id="heroBg" src="" alt="" />
                 <div class="hero-overlay"></div>
@@ -591,22 +680,15 @@
             <div class="watch-layout">
                 <div>
                     <div class="player-card">
-                        <!-- ◆ player-wrapper is fullscreened (not the iframe) so
-                               .player-watermark travels with it into fullscreen ◆ -->
                         <div class="player-wrapper" id="playerWrapper">
-
-                            <!-- Watermark: absolute-positioned inside wrapper,
-                                 visible in both normal and fullscreen modes -->
                             <div class="player-watermark" id="playerWatermark">
                                 <img src="https://media1.tenor.com/m/2thZuhJSwFsAAAAC/wolf-girl-howling.gif" alt="ThyAnime" />
                                 <span>ThyAnime</span>
                             </div>
-
                             <div class="player-placeholder" id="playerPlaceholder">
                                 <span class="big-icon">🎬</span>
                                 <p>Select an episode to start streaming</p>
                             </div>
-
                             <iframe id="playerIframe" style="display:none;" allowfullscreen
                                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                                 sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-presentation"></iframe>
@@ -628,8 +710,6 @@
                             <button class="audio-btn active" data-audio="sub" onclick="setAudio('sub')">🎧 Sub</button>
                             <button class="audio-btn" data-audio="dub" onclick="setAudio('dub')">🗣️ Dub</button>
                         </div>
-
-                        <!-- Fullscreen button that fullscreens the wrapper div -->
                         <button class="back-btn" id="fsBtn" onclick="toggleFullscreen()" title="Fullscreen player" style="margin-left:auto;padding:9px 13px;">⛶</button>
                     </div>
 
@@ -669,6 +749,49 @@
 
     <div class="footer">ThyAnime — Free anime streaming · Not affiliated with AniList or any provider</div>
     <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+    // ── FIREBASE PRESENCE / LIVE COUNTER ──────────────────────────────────────
+    (function initFirebasePresence() {
+        const firebaseConfig = {
+            databaseURL: "https://thyanime-88d67-default-rtdb.firebaseio.com/"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Generate a unique session ID for this tab
+        const sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        const presenceRef = db.ref('presence/' + sessionId);
+        const connectedRef = db.ref('.info/connected');
+
+        connectedRef.on('value', (snap) => {
+            if (snap.val() === true) {
+                // Write this session; auto-remove on disconnect
+                presenceRef.onDisconnect().remove();
+                presenceRef.set({ active: true, ts: firebase.database.ServerValue.TIMESTAMP });
+            }
+        });
+
+        // Count all presence entries in real time
+        const allPresenceRef = db.ref('presence');
+        const countEl = document.getElementById('liveCountNumber');
+        const labelEl = document.getElementById('liveCountLabel');
+
+        allPresenceRef.on('value', (snap) => {
+            const count = snap.numChildren();
+            if (countEl) {
+                countEl.textContent = count.toLocaleString();
+                labelEl.textContent = count === 1 ? 'viewer watching' : 'viewers watching';
+            }
+        });
+
+        // Clean up when the tab closes (belt-and-suspenders alongside onDisconnect)
+        window.addEventListener('beforeunload', () => {
+            presenceRef.remove();
+        });
+    })();
+    </script>
 
     <script>
     (function () {
@@ -729,8 +852,6 @@
         const sidebarRelations=$('#sidebarRelations');
 
         // ── FULLSCREEN ────────────────────────────────────────────────────
-        // We fullscreen the WRAPPER div, not the iframe.
-        // This keeps .player-watermark (a child of the wrapper) visible in fullscreen.
         window.toggleFullscreen = () => {
             const el = playerWrapper;
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
