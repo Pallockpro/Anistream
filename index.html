@@ -23,7 +23,6 @@
             --radius-xs: 7px;
             --transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
             --font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-            --logo-gif: url('https://media1.tenor.com/m/2thZuhJSwFsAAAAC/wolf-girl-howling.gif');
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         html { scroll-behavior: smooth; }
@@ -33,21 +32,10 @@
             color: var(--text);
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
-            position: relative;
             background-image:
                 radial-gradient(ellipse at 15% 10%, rgba(244,117,33,0.04) 0%, transparent 55%),
                 radial-gradient(ellipse at 85% 70%, rgba(255,140,66,0.03) 0%, transparent 55%),
                 radial-gradient(ellipse at 50% 40%, rgba(180,130,255,0.02) 0%, transparent 50%);
-        }
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: var(--logo-gif) no-repeat fixed 50% 50%;
-            background-size: 380px auto;
-            opacity: 0.045;
-            pointer-events: none;
-            z-index: 0;
         }
         ::-webkit-scrollbar { width:5px; height:5px; }
         ::-webkit-scrollbar-track { background:transparent; }
@@ -70,7 +58,6 @@
             display:flex; align-items:center; gap:10px;
             font-weight:800; font-size:1.35rem; letter-spacing:-0.02em;
             color:#fff; cursor:pointer; user-select:none; text-decoration:none; flex-shrink:0;
-            position:relative; z-index:1;
         }
         .nav-logo-icon {
             width:42px; height:42px; border-radius:50%;
@@ -85,7 +72,7 @@
         .nav-logo:hover .nav-logo-icon {
             box-shadow: 0 6px 28px rgba(244,117,33,0.55);
         }
-        .nav-links { display:flex; gap:6px; flex-shrink:0; position:relative; z-index:1; }
+        .nav-links { display:flex; gap:6px; flex-shrink:0; }
         .nav-link {
             padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.85rem;
             cursor:pointer; transition: var(--transition);
@@ -94,7 +81,7 @@
         .nav-link:hover { color:#fff; background:var(--surface2); }
         .nav-link.active { background:var(--accent); color:#fff; box-shadow:0 4px 14px var(--accent-glow); }
         .nav-search {
-            position:relative; flex:1; max-width:440px; min-width:180px; margin-left:auto; z-index:1;
+            position:relative; flex:1; max-width:440px; min-width:180px; margin-left:auto;
         }
         .nav-search input {
             width:100%; padding:10px 16px 10px 40px; border-radius:24px;
@@ -126,7 +113,7 @@
         .search-result-title { font-weight:600; font-size:0.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .search-result-meta { font-size:0.72rem; color:var(--text3); }
 
-        .app { max-width:1400px; margin:0 auto; padding:24px 20px 60px; position:relative; z-index:1; }
+        .app { max-width:1400px; margin:0 auto; padding:24px 20px 60px; }
 
         .home-page { display:flex; flex-direction:column; gap:36px; }
         .hero-section {
@@ -281,7 +268,7 @@
             display:flex; align-items:center; gap:7px;
         }
         @keyframes slideUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
-        .footer { text-align:center; padding:30px; color:var(--text3); font-size:0.75rem; border-top:1px solid var(--border); margin-top:40px; position:relative; z-index:1; }
+        .footer { text-align:center; padding:30px; color:var(--text3); font-size:0.75rem; border-top:1px solid var(--border); margin-top:40px; }
 
         @media (max-width:700px) {
             .nav-inner { gap:8px; height:52px; }
@@ -1008,7 +995,11 @@
                         const url = await getServer5Url();
                         playerPlaceholder.style.display = 'none';
                         playerIframe.style.display = 'block';
+                        // Remove sandbox to allow the embed page to function fully
                         playerIframe.removeAttribute('sandbox');
+                        // Match the embed's recommended iframe attributes
+                        playerIframe.setAttribute('allow', 'autoplay; fullscreen');
+                        playerIframe.setAttribute('scrolling', 'no');
                         playerIframe.src = url;
                     } catch (e) {
                         console.error(e);
@@ -1020,7 +1011,10 @@
                     return;
                 }
 
+                // Restore sandbox and attributes for other providers
                 playerIframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms allow-presentation');
+                playerIframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+                playerIframe.removeAttribute('scrolling');
 
                 const url = provider.getUrl(
                     state.selectedAnime.id,
@@ -1097,7 +1091,7 @@
                 loadHomePage();
             }
             init();
-            console.log('🐺 ThyAnime ready! Logo set as favicon + background watermark.');
+            console.log('🐺 ThyAnime ready! Server 5 embed fixed with correct iframe settings.');
         })();
     </script>
 </body>
