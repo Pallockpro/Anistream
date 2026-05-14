@@ -412,6 +412,7 @@
     <script>
         (function() {
             const SERVER5_BASE = 'https://operate-moonrise-riddance.ngrok-free.dev';
+            const SKIP_WARNING = { headers: { 'ngrok-skip-browser-warning': '1' } };
 
             const PROVIDERS = [
                 {
@@ -459,12 +460,9 @@
                     name: "Server 5",
                     icon: "🌐",
                     color: "#f97316",
-                    description: "New API, sub & dub via embed",
-                    getUrl: (id, season, ep, audio = "sub") => {
-                        // This URL will be set dynamically after sessions are loaded
-                        return '';
-                    },
-                    supportsAudio: true,
+                    description: "API embed (sub/dub handled by player)",
+                    getUrl: () => '', // not used, we build URL dynamically
+                    supportsAudio: false,  // embed player handles sub/dub natively
                     external: false,
                 }
             ];
@@ -969,24 +967,25 @@
                 if (!state.selectedAnime || !state.selectedEpisode || !state.selectedProvider) return;
                 const provider = state.selectedProvider;
 
-                // Hide iframe and show placeholder while loading
+                // Always hide and clear iframe first
                 playerIframe.style.display = 'none';
                 playerIframe.src = '';
 
                 if (provider.id === 'server5') {
                     try {
-                        // Ensure we have the sessions
+                        // 1. Get anime session
                         if (!state.server5Data.animeSession) {
                             const searchUrl = `${SERVER5_BASE}/search?q=${encodeURIComponent(state.selectedAnime.title)}`;
-                            const results = await fetch(searchUrl).then(r => r.json());
+                            const results = await fetch(searchUrl, SKIP_WARNING).then(r => r.json());
                             if (!results || results.length === 0) throw new Error('Anime not found on Server 5');
                             state.server5Data.animeSession = results[0].session;
                             state.server5Data.episodes = [];
                         }
                         const animeSession = state.server5Data.animeSession;
+                        // 2. Get episode list
                         if (!state.server5Data.episodes.length) {
                             const epUrl = `${SERVER5_BASE}/episodes?session=${animeSession}`;
-                            const eps = await fetch(epUrl).then(r => r.json());
+                            const eps = await fetch(epUrl, SKIP_WARNING).then(r => r.json());
                             if (!eps) throw new Error('No episodes found');
                             state.server5Data.episodes = eps;
                         }
@@ -994,15 +993,22 @@
                         const ep = state.server5Data.episodes.find(e => e.number == episodeNumber);
                         if (!ep) throw new Error('Episode not found');
 
-                        // Build embed URL exactly as shown
+                        // 3. Build embed URL (exactly as in the working example)
                         const embedUrl = `${SERVER5_BASE}/embed?anime_session=${animeSession}&episode_session=${ep.session}&title=${encodeURIComponent(state.selectedAnime.title + ' Ep ' + episodeNumber)}`;
 
-                        // Remove sandbox and set minimal attributes for embed
+                        // 4. Set iframe attributes (matching the example)
                         playerIframe.removeAttribute('sandbox');
                         playerIframe.setAttribute('allow', 'autoplay; fullscreen');
+                        playerIframe.setAttribute('scrolling', 'no');
                         playerIframe.style.display = 'block';
                         playerIframe.src = embedUrl;
                         playerPlaceholder.style.display = 'none';
+
+                        // 5. Prefetch next episode
+                        const nextEp = state.server5Data.episodes.find(e => e.number == episodeNumber + 1);
+                        if (nextEp) {
+                            fetch(`${SERVER5_BASE}/prefetch?anime_session=${animeSession}&episode_session=${nextEp.session}`, SKIP_WARNING).catch(() => {});
+                        }
                     } catch (e) {
                         console.error(e);
                         playerPlaceholder.style.display = 'flex';
@@ -1012,7 +1018,7 @@
                     return;
                 }
 
-                // Other servers
+                // Other servers (iframe or external)
                 playerIframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms allow-presentation');
                 playerIframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
                 playerIframe.removeAttribute('scrolling');
@@ -1092,7 +1098,7 @@
                 loadHomePage();
             }
             init();
-            console.log('🐺 ThyAnime ready! Server 5 uses the official embed URL.');
+            console.log('🐺 ThyAnime ready! Server 5 uses the exact embed method from the API example.');
         })();
     </script>
 </body>
