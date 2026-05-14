@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ThyAnime — Watch Anime Online Free</title>
+    <link rel="icon" type="image/gif" href="https://media1.tenor.com/m/2thZuhJSwFsAAAAC/wolf-girl-howling.gif">
     <style>
         :root {
             --bg: #0b0b10;
@@ -22,6 +23,7 @@
             --radius-xs: 7px;
             --transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
             --font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --logo-gif: url('https://media1.tenor.com/m/2thZuhJSwFsAAAAC/wolf-girl-howling.gif');
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         html { scroll-behavior: smooth; }
@@ -31,10 +33,21 @@
             color: var(--text);
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
+            position: relative;
             background-image:
                 radial-gradient(ellipse at 15% 10%, rgba(244,117,33,0.04) 0%, transparent 55%),
                 radial-gradient(ellipse at 85% 70%, rgba(255,140,66,0.03) 0%, transparent 55%),
                 radial-gradient(ellipse at 50% 40%, rgba(180,130,255,0.02) 0%, transparent 50%);
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: var(--logo-gif) no-repeat fixed 50% 50%;
+            background-size: 380px auto;
+            opacity: 0.045;
+            pointer-events: none;
+            z-index: 0;
         }
         ::-webkit-scrollbar { width:5px; height:5px; }
         ::-webkit-scrollbar-track { background:transparent; }
@@ -43,7 +56,7 @@
 
         .nav {
             position: sticky; top:0; z-index:200;
-            background: rgba(14,14,22,0.85);
+            background: rgba(14,14,22,0.88);
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
             border-bottom:1px solid var(--border);
@@ -57,6 +70,7 @@
             display:flex; align-items:center; gap:10px;
             font-weight:800; font-size:1.35rem; letter-spacing:-0.02em;
             color:#fff; cursor:pointer; user-select:none; text-decoration:none; flex-shrink:0;
+            position:relative; z-index:1;
         }
         .nav-logo-icon {
             width:42px; height:42px; border-radius:50%;
@@ -71,7 +85,7 @@
         .nav-logo:hover .nav-logo-icon {
             box-shadow: 0 6px 28px rgba(244,117,33,0.55);
         }
-        .nav-links { display:flex; gap:6px; flex-shrink:0; }
+        .nav-links { display:flex; gap:6px; flex-shrink:0; position:relative; z-index:1; }
         .nav-link {
             padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.85rem;
             cursor:pointer; transition: var(--transition);
@@ -80,7 +94,7 @@
         .nav-link:hover { color:#fff; background:var(--surface2); }
         .nav-link.active { background:var(--accent); color:#fff; box-shadow:0 4px 14px var(--accent-glow); }
         .nav-search {
-            position:relative; flex:1; max-width:440px; min-width:180px; margin-left:auto;
+            position:relative; flex:1; max-width:440px; min-width:180px; margin-left:auto; z-index:1;
         }
         .nav-search input {
             width:100%; padding:10px 16px 10px 40px; border-radius:24px;
@@ -112,7 +126,7 @@
         .search-result-title { font-weight:600; font-size:0.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .search-result-meta { font-size:0.72rem; color:var(--text3); }
 
-        .app { max-width:1400px; margin:0 auto; padding:24px 20px 60px; }
+        .app { max-width:1400px; margin:0 auto; padding:24px 20px 60px; position:relative; z-index:1; }
 
         .home-page { display:flex; flex-direction:column; gap:36px; }
         .hero-section {
@@ -267,7 +281,7 @@
             display:flex; align-items:center; gap:7px;
         }
         @keyframes slideUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
-        .footer { text-align:center; padding:30px; color:var(--text3); font-size:0.75rem; border-top:1px solid var(--border); margin-top:40px; }
+        .footer { text-align:center; padding:30px; color:var(--text3); font-size:0.75rem; border-top:1px solid var(--border); margin-top:40px; position:relative; z-index:1; }
 
         @media (max-width:700px) {
             .nav-inner { gap:8px; height:52px; }
@@ -804,7 +818,7 @@
                 state.selectedEpisode = 1;
                 state.selectedProvider = PROVIDERS.find(p => !p.external) || PROVIDERS[0];
                 state.selectedAudio = 'sub';
-                state.server5Data = { animeSession: null, episodes: [] }; // clear server5 cache
+                state.server5Data = { animeSession: null, episodes: [] };
                 const existing = state.watchHistory.findIndex(h => h.id === animeData.id);
                 if (existing >= 0) state.watchHistory.splice(existing, 1);
                 state.watchHistory.unshift({ ...animeData, episode: 1, timestamp: Date.now() });
@@ -994,7 +1008,7 @@
                         const url = await getServer5Url();
                         playerPlaceholder.style.display = 'none';
                         playerIframe.style.display = 'block';
-                        playerIframe.removeAttribute('sandbox'); // remove sandbox for server5 embed
+                        playerIframe.removeAttribute('sandbox');
                         playerIframe.src = url;
                     } catch (e) {
                         console.error(e);
@@ -1006,7 +1020,6 @@
                     return;
                 }
 
-                // Restore sandbox for other providers
                 playerIframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms allow-presentation');
 
                 const url = provider.getUrl(
@@ -1084,7 +1097,7 @@
                 loadHomePage();
             }
             init();
-            console.log('🐺 ThyAnime ready! Server 5 video display fixed.');
+            console.log('🐺 ThyAnime ready! Logo set as favicon + background watermark.');
         })();
     </script>
 </body>
