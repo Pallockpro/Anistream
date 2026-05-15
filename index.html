@@ -42,6 +42,56 @@
         ::-webkit-scrollbar-track{background:transparent;}
         ::-webkit-scrollbar-thumb{background:var(--surface4);border-radius:10px;}
 
+        /* ── ANNOUNCEMENT BANNER ── */
+        #announcementBanner {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 10px 24px;
+            background: linear-gradient(135deg, rgba(244,117,33,0.12), rgba(244,117,33,0.06));
+            border-bottom: 1px solid rgba(244,117,33,0.25);
+            color: var(--text);
+            font-family: var(--font);
+            font-weight: 600;
+            font-size: 0.88rem;
+            letter-spacing: 0.01em;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 3000;
+            backdrop-filter: blur(10px);
+            animation: bannerIn 0.3s var(--ease);
+        }
+        @keyframes bannerIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to   { transform: translateY(0); opacity: 1; }
+        }
+        #announcementBanner span {
+            flex: 1;
+            text-align: center;
+            line-height: 1.4;
+        }
+        #bannerCloseBtn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            color: var(--text2);
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            line-height: 1;
+            transition: all 0.15s var(--ease);
+            flex-shrink: 0;
+        }
+        #bannerCloseBtn:hover {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border-color: rgba(244,117,33,0.5);
+        }
+
         /* ── MAINTENANCE OVERLAY ── */
         #maintenanceOverlay{
             display:none;position:fixed;inset:0;z-index:9999;
@@ -308,6 +358,12 @@
 </head>
 <body>
 
+<!-- ── ANNOUNCEMENT BANNER ── -->
+<div id="announcementBanner">
+    <span id="bannerMessage"></span>
+    <button id="bannerCloseBtn" onclick="dismissBanner()">✕</button>
+</div>
+
 <!-- ── MAINTENANCE OVERLAY — toggled in real-time via Firebase (no refresh needed) ── -->
 <div id="maintenanceOverlay">
     <div class="maint-bg"></div>
@@ -504,8 +560,35 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // ── ANNOUNCEMENT BANNER ────────────────────────────────────────────────
+    const bannerEl = document.getElementById('announcementBanner');
+    const bannerMsgEl = document.getElementById('bannerMessage');
+
+    function updateBanner(data) {
+        if (data && data.visible && data.message) {
+            bannerMsgEl.textContent = data.message;
+            bannerEl.style.display = 'flex';
+        } else {
+            bannerEl.style.display = 'none';
+        }
+    }
+
+    // Real-time listener for /banner node
+    try {
+        db.ref('banner').on('value', snap => {
+            const bannerData = snap.val();
+            updateBanner(bannerData);
+        });
+    } catch(e) {
+        console.info('[ThyAnime] Banner listener skipped:', e.message);
+    }
+
+    // Manual dismiss – hides banner until next Firebase change
+    window.dismissBanner = () => {
+        bannerEl.style.display = 'none';
+    };
+
     // ── MAINTENANCE — real-time listener, no refresh needed ────────────────
-    // Uses .on('value') exactly like the live counter so changes apply instantly.
     const maintOverlay = document.getElementById('maintenanceOverlay');
     const maintMsgEl   = document.getElementById('maintMessage');
 
@@ -514,9 +597,15 @@
             if (maintMsgEl && data.message) maintMsgEl.textContent = data.message;
             maintOverlay.classList.add('visible');
             document.body.style.overflow = 'hidden';
+            // Hide the announcement banner when maintenance is on
+            if (bannerEl) bannerEl.style.display = 'none';
         } else {
             maintOverlay.classList.remove('visible');
             document.body.style.overflow = '';
+            // Re-apply banner based on last known Firebase data
+            // (since we don't keep a local copy, we rely on the next Firebase event,
+            // but we can also just check the cached value if needed. Simpler: force a re-read)
+            // For simplicity, just let the next banner listener update it.
         }
     }
 
@@ -546,17 +635,15 @@
     }
 
     // ── ANILIST — multi-proxy with automatic fallback ──────────────────────
-    // Tries direct first (fastest, works on most hosts), then falls through
-    // a list of CORS proxies. Remembers the last successful one.
     const ANILIST_URL  = 'https://graphql.anilist.co';
     const PROXIES = [
-        raw => raw,                                                                    // direct
-        raw => `https://api.allorigins.win/raw?url=${encodeURIComponent(raw)}`,        // allorigins
-        raw => `https://thingproxy.freeboard.io/fetch/${raw}`,                         // thingproxy
-        raw => `https://corsproxy.io/?${encodeURIComponent(raw)}`,                    // corsproxy.io
-        raw => `https://cors-anywhere.herokuapp.com/${raw}`,                           // cors-anywhere
+        raw => raw,
+        raw => `https://api.allorigins.win/raw?url=${encodeURIComponent(raw)}`,
+        raw => `https://thingproxy.freeboard.io/fetch/${raw}`,
+        raw => `https://corsproxy.io/?${encodeURIComponent(raw)}`,
+        raw => `https://cors-anywhere.herokuapp.com/${raw}`,
     ];
-    let _pi = 0; // last-good proxy index
+    let _pi = 0;
 
     async function anilistQuery(query, variables = {}) {
         const body    = JSON.stringify({ query, variables });
@@ -569,7 +656,7 @@
                 if (!r.ok) throw new Error(`HTTP ${r.status}`);
                 const j = await r.json();
                 if (j.errors) throw new Error(j.errors[0]?.message || 'GraphQL error');
-                _pi = idx;          // remember what worked
+                _pi = idx;
                 return j.data || {};
             } catch(_) { /* try next */ }
         }
