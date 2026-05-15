@@ -461,61 +461,53 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-// ── FIREBASE INIT & LIVE COUNTER ──────────────────────────────────────
-(function initFirebase() {
+// ── SINGLE UNIFIED SCRIPT — Firebase init + maintenance check + app ───
+(async function () {
+
+    // 1. Init Firebase synchronously (compat SDK is already loaded)
     const firebaseConfig = { databaseURL: "https://thyanime-88d67-default-rtdb.firebaseio.com/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // 2. Check maintenance FIRST, before anything else renders
+    try {
+        const snap = await db.ref('maintenance').once('value');
+        const maintenance = snap.val();
+        if (maintenance && maintenance.enabled === true) {
+            document.body.innerHTML = `
+                <style>
+                    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800;900&family=DM+Sans:wght@400;500&display=swap');
+                    *{margin:0;padding:0;box-sizing:border-box;}
+                    body{background:#080810;font-family:'DM Sans',system-ui,sans-serif;color:#eeeef8;}
+                </style>
+                <div style="position:fixed;inset:0;background:#080810;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:24px;text-align:center;">
+                    <img src="https://media1.tenor.com/m/2thZuhJSwFsAAAAC/wolf-girl-howling.gif"
+                         style="width:80px;height:80px;border-radius:20px;box-shadow:0 0 0 3px #f47521,0 12px 32px rgba(244,117,33,0.4);" alt="ThyAnime">
+                    <h1 style="font-family:'Outfit',system-ui,sans-serif;font-size:2rem;font-weight:800;letter-spacing:-0.03em;background:linear-gradient(135deg,#fff 30%,#ff9d52);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">We'll be right back</h1>
+                    <p style="color:#9898b8;font-size:1rem;max-width:460px;line-height:1.6;">${maintenance.message || 'ThyAnime is currently undergoing maintenance. Please check back soon!'}</p>
+                    <div style="font-size:0.78rem;color:#55556e;">— The ThyAnime Team</div>
+                </div>`;
+            return; // STOP — do not run any more app code
+        }
+    } catch (e) {
+        console.warn('Maintenance check failed, proceeding normally:', e);
+    }
+
+    // 3. Not in maintenance — start live counter
     const sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
     const presenceRef = db.ref('presence/' + sessionId);
-    const connectedRef = db.ref('.info/connected');
-
-    connectedRef.on('value', (snap) => {
+    db.ref('.info/connected').on('value', (snap) => {
         if (snap.val() === true) {
             presenceRef.onDisconnect().remove();
             presenceRef.set({ active: true, ts: firebase.database.ServerValue.TIMESTAMP });
         }
     });
-
     const countEl = document.getElementById('liveCountNumber');
     db.ref('presence').on('value', (snap) => {
         const count = snap.numChildren();
         if (countEl) countEl.textContent = count.toLocaleString();
     });
-
     window.addEventListener('beforeunload', () => { presenceRef.remove(); });
-    window.__thyAnimeDb = db;
-})();
-</script>
-
-<script>
-// ── MAINTENANCE CHECK + MAIN APP ──────────────────────────────────────
-(async function () {
-    const db = window.__thyAnimeDb;
-    if (db) {
-        try {
-            const snap = await db.ref('maintenance').once('value');
-            const maintenance = snap.val();
-            if (maintenance && maintenance.enabled === true) {
-                // Replace entire body content, keep CSS vars available via inline style
-                document.body.innerHTML = `
-                    <style>
-                        :root{--bg:#080810;--surface:#0f0f1a;--accent:#f47521;--accent2:#ff9d52;--text:#eeeef8;--text2:#9898b8;--text3:#55556e;--font:'Outfit',system-ui,sans-serif;--font-body:'DM Sans',system-ui,sans-serif;}
-                        body{margin:0;background:var(--bg);font-family:var(--font-body);}
-                    </style>
-                    <div style="position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:24px;text-align:center;font-family:var(--font);">
-                        <img src="https://media1.tenor.com/m/2thZuhJSwFsAAAAC/wolf-girl-howling.gif" style="width:80px;height:80px;border-radius:20px;box-shadow:0 0 0 3px #f47521,0 12px 32px rgba(244,117,33,0.4);" alt="ThyAnime">
-                        <h1 style="font-size:2rem;font-weight:800;letter-spacing:-0.03em;background:linear-gradient(135deg,#fff 30%,#ff9d52);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">We'll be right back</h1>
-                        <p style="color:#9898b8;font-size:1rem;max-width:460px;line-height:1.6;font-family:var(--font-body);">${(maintenance.message || 'ThyAnime is currently undergoing maintenance. Please check back soon!')}</p>
-                        <div style="font-size:0.78rem;color:#55556e;margin-top:8px;">— The ThyAnime Team</div>
-                    </div>`;
-                return;
-            }
-        } catch (e) {
-            console.warn('Maintenance check failed, proceeding normally:', e);
-        }
-    }
 
     // ── EVERYTHING BELOW ONLY RUNS IF NOT IN MAINTENANCE ──
 
