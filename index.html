@@ -63,12 +63,40 @@
             z-index: 0;
         }
 
+        /* ── MAINTENANCE OVERLAY ─────────────────────────────────────── */
+        .maintenance-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            background: var(--bg);
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 28px;
+            padding: 24px;
+            text-align: center;
+            font-family: var(--font);
+        }
+        .maintenance-overlay img {
+            width: 80px; height: 80px; border-radius: 20px;
+            box-shadow: 0 0 0 3px var(--accent), 0 12px 32px rgba(244,117,33,0.4);
+        }
+        .maintenance-overlay h1 {
+            font-size: 2rem; font-weight: 800; letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #fff 30%, var(--accent2));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .maintenance-overlay p {
+            color: var(--text2); font-size: 1rem; max-width: 460px;
+            line-height: 1.6; font-family: var(--font-body);
+        }
+        .maintenance-overlay .footer-note {
+            font-size: 0.78rem; color: var(--text3); margin-top: 8px;
+        }
+
+        /* ── rest of styles unchanged ── */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--surface4); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--surface3); }
 
-        /* ── NAV ─────────────────────────────────────────────────────────── */
         .nav {
             position: sticky; top: 0; z-index: 200;
             background: rgba(8, 8, 16, 0.82);
@@ -600,6 +628,7 @@
     </style>
 </head>
 <body>
+    <!-- Normal content will be replaced if maintenance mode is active -->
     <nav class="nav">
         <div class="nav-inner">
             <a class="nav-logo" onclick="goHome()" title="ThyAnime Home">
@@ -625,8 +654,6 @@
     <div class="app">
         <!-- HOME -->
         <div class="home-page" id="homePage">
-
-            <!-- ── LIVE VIEWER COUNTER ── -->
             <div class="live-counter-bar" id="liveCounterBar">
                 <div class="live-dot-wrap">
                     <div class="live-dot"></div>
@@ -751,29 +778,26 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-    // ── FIREBASE PRESENCE / LIVE COUNTER ──────────────────────────────────────
-    (function initFirebasePresence() {
+    // ── FIREBASE INIT & LIVE COUNTER ──────────────────────────────────────
+    (function initFirebase() {
         const firebaseConfig = {
             databaseURL: "https://thyanime-88d67-default-rtdb.firebaseio.com/"
         };
-
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Generate a unique session ID for this tab
+        // --- LIVE VIEWER COUNTER (runs even during maintenance) ---
         const sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
         const presenceRef = db.ref('presence/' + sessionId);
         const connectedRef = db.ref('.info/connected');
 
         connectedRef.on('value', (snap) => {
             if (snap.val() === true) {
-                // Write this session; auto-remove on disconnect
                 presenceRef.onDisconnect().remove();
                 presenceRef.set({ active: true, ts: firebase.database.ServerValue.TIMESTAMP });
             }
         });
 
-        // Count all presence entries in real time
         const allPresenceRef = db.ref('presence');
         const countEl = document.getElementById('liveCountNumber');
         const labelEl = document.getElementById('liveCountLabel');
@@ -786,15 +810,43 @@
             }
         });
 
-        // Clean up when the tab closes (belt-and-suspenders alongside onDisconnect)
         window.addEventListener('beforeunload', () => {
             presenceRef.remove();
         });
+
+        // Store db ref globally for the maintenance check below
+        window.__thyAnimeDb = db;
     })();
     </script>
 
     <script>
-    (function () {
+    // ── MAINTENANCE CHECK & MAIN APP LOGIC ──────────────────────────────
+    (async function () {
+        const db = window.__thyAnimeDb;
+        if (db) {
+            try {
+                // Check maintenance mode ONCE at startup
+                const snap = await db.ref('maintenance').once('value');
+                const maintenance = snap.val();
+                if (maintenance && maintenance.enabled === true) {
+                    // Show maintenance page and stop all further execution
+                    document.body.innerHTML = `
+                        <div class="maintenance-overlay">
+                            <img src="https://media1.tenor.com/m/2thZuhJSwFsAAAAC/wolf-girl-howling.gif" alt="ThyAnime" />
+                            <h1>We'll be right back</h1>
+                            <p>${(maintenance.message || 'ThyAnime is currently undergoing maintenance. Please check back soon!')}</p>
+                            <div class="footer-note">— The ThyAnime Team</div>
+                        </div>`;
+                    return; // STOP – rest of the app never runs
+                }
+            } catch (e) {
+                console.warn('Maintenance check failed, proceeding normally:', e);
+                // If Firebase is unreachable, continue as normal
+            }
+        }
+
+        // ── Everything below only runs if maintenance is NOT active ────
+
         const SERVER5_BASE = 'https://spelling-faceted-husked.ngrok-free.dev';
         const SKIP_WARNING = { headers: { 'ngrok-skip-browser-warning': '1' } };
 
